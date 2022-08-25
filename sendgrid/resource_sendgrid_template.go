@@ -2,10 +2,12 @@
 Provide a resource to manage a template of email.
 Example Usage
 ```hcl
-resource "sendgrid_template" "template" {
-	name       = "my-template"
-	generation = "dynamic"
-}
+
+	resource "sendgrid_template" "template" {
+		name       = "my-template"
+		generation = "dynamic"
+	}
+
 ```
 Import
 A template can be imported, e.g.

@@ -2,12 +2,14 @@
 Provide a resource to manage a domain authentication.
 Example Usage
 ```hcl
-resource "sendgrid_domain_authentication" "default" {
-	domain = "example.com"
-    ips = [ "10.10.10.10" ]
-    is_default = true
-    automatic_security = false
-}
+
+	resource "sendgrid_domain_authentication" "default" {
+		domain = "example.com"
+	    ips = [ "10.10.10.10" ]
+	    is_default = true
+	    automatic_security = false
+	}
+
 ```
 Import
 An unsubscribe group can be imported, e.g.

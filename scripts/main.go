@@ -386,6 +386,7 @@ func getFileDescription(fname string) (string, error) {
 }
 
 // getSubStruct get sub structure from go file.
+//
 //nolint:gocognit
 func getSubStruct(step int, k string, v *schema.Schema) []string { //nolint:cyclop,funlen
 	var subStructs []string

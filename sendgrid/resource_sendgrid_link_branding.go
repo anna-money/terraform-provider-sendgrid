@@ -2,10 +2,12 @@
 Provide a resource to manage link branding.
 Example Usage
 ```hcl
-resource "sendgrid_link_branding" "default" {
-	domain = "example.com"
-    is_default = true
-}
+
+	resource "sendgrid_link_branding" "default" {
+		domain = "example.com"
+	    is_default = true
+	}
+
 ```
 Import
 An unsubscribe group can be imported, e.g.

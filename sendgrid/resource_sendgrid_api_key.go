@@ -2,13 +2,15 @@
 Provide a resource to manage an API key.
 Example Usage
 ```hcl
-resource "sendgrid_api_key" "api_key" {
-	name   = "my-api-key"
-	scopes = [
-		"mail.send",
-		"sender_verification_eligible",
-	]
-}
+
+	resource "sendgrid_api_key" "api_key" {
+		name   = "my-api-key"
+		scopes = [
+			"mail.send",
+			"sender_verification_eligible",
+		]
+	}
+
 ```
 Import
 An API key can be imported, e.g.
