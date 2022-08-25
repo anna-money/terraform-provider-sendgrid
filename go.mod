@@ -6,7 +6,6 @@ require (
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.21.0
 	github.com/sendgrid/rest v2.6.9+incompatible
 	github.com/sendgrid/sendgrid-go v3.11.1+incompatible
-	github.com/trois-six/terraform-provider-sendgrid v0.2.1
 )
 
 require (
