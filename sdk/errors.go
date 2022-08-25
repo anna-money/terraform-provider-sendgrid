@@ -127,7 +127,8 @@ type subUserErrors struct {
 
 // RetryOnRateLimit management of RequestErrors, and launch a retry if needed.
 func RetryOnRateLimit(
-	ctx context.Context, d *schema.ResourceData, f func() (interface{}, RequestError)) (interface{}, error) {
+	ctx context.Context, d *schema.ResourceData, f func() (interface{}, RequestError),
+) (interface{}, error) {
 	var resp interface{}
 
 	err := resource.RetryContext(

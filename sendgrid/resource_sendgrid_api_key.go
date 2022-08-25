@@ -89,7 +89,7 @@ func resourceSendgridAPIKeyCreate(ctx context.Context, d *schema.ResourceData, m
 	}
 
 	apiKeyStruct, err := sendgrid.RetryOnRateLimit(ctx, d, func() (interface{}, sendgrid.RequestError) {
-		return c.CreateAPIKey(name, scopes)
+		return c.CreateAPIKey(ctx, name, scopes)
 	})
 
 	apiKey := apiKeyStruct.(*sendgrid.APIKey)
@@ -105,10 +105,10 @@ func resourceSendgridAPIKeyCreate(ctx context.Context, d *schema.ResourceData, m
 	return resourceSendgridAPIKeyRead(ctx, d, m)
 }
 
-func resourceSendgridAPIKeyRead(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceSendgridAPIKeyRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	c := m.(*sendgrid.Client)
 
-	apiKey, err := c.ReadAPIKey(d.Id())
+	apiKey, err := c.ReadAPIKey(ctx, d.Id())
 	if err.Err != nil {
 		return diag.FromErr(err.Err)
 	}
@@ -151,7 +151,7 @@ func resourceSendgridAPIKeyUpdate(ctx context.Context, d *schema.ResourceData, m
 	}
 
 	_, err := sendgrid.RetryOnRateLimit(ctx, d, func() (interface{}, sendgrid.RequestError) {
-		return c.UpdateAPIKey(d.Id(), a.Name, a.Scopes)
+		return c.UpdateAPIKey(ctx, d.Id(), a.Name, a.Scopes)
 	})
 	if err != nil {
 		return diag.FromErr(err)
@@ -164,7 +164,7 @@ func resourceSendgridAPIKeyDelete(ctx context.Context, d *schema.ResourceData, m
 	c := m.(*sendgrid.Client)
 
 	_, err := sendgrid.RetryOnRateLimit(ctx, d, func() (interface{}, sendgrid.RequestError) {
-		return c.DeleteAPIKey(d.Id())
+		return c.DeleteAPIKey(ctx, d.Id())
 	})
 	if err != nil {
 		return diag.FromErr(err)

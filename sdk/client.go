@@ -1,6 +1,7 @@
 package sendgrid
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
@@ -42,7 +43,7 @@ func bodyToJSON(body interface{}) ([]byte, error) {
 }
 
 // Get gets a resource from Sendgrid.
-func (c *Client) Get(method rest.Method, endpoint string) (string, int, error) {
+func (c *Client) Get(ctx context.Context, method rest.Method, endpoint string) (string, int, error) {
 	var req rest.Request
 	if c.OnBehalfOf != "" {
 		req = sendgrid.GetRequestSubuser(c.apiKey, endpoint, c.host, c.OnBehalfOf)
@@ -61,7 +62,7 @@ func (c *Client) Get(method rest.Method, endpoint string) (string, int, error) {
 }
 
 // Post posts a resource to Sendgrid.
-func (c *Client) Post(method rest.Method, endpoint string, body interface{}) (string, int, error) {
+func (c *Client) Post(ctx context.Context, method rest.Method, endpoint string, body interface{}) (string, int, error) {
 	var err error
 
 	var req rest.Request

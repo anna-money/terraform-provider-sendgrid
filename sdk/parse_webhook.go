@@ -31,7 +31,8 @@ func (c *Client) CreateParseWebhook(
 	hostname string,
 	url string,
 	spamCheck bool,
-	sendRaw bool) (*ParseWebhook, RequestError) {
+	sendRaw bool,
+) (*ParseWebhook, RequestError) {
 	if hostname == "" {
 		return nil, RequestError{
 			StatusCode: http.StatusInternalServerError,

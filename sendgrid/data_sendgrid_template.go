@@ -59,7 +59,7 @@ func dataSendgridTemplateRead(context context.Context, d *schema.ResourceData, m
 			generation = "dynamic"
 		}
 
-		templates, err := c.ReadTemplates(generation)
+		templates, err := c.ReadTemplates(context, generation)
 		if err != nil {
 			return diag.FromErr(err)
 		}

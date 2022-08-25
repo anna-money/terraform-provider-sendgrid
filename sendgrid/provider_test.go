@@ -26,7 +26,7 @@ func TestProvider(t *testing.T) {
 }
 
 func TestProvider_impl(t *testing.T) {
-	var _ *schema.Provider = sendgrid.Provider()
+	var _ = sendgrid.Provider()
 }
 
 func testAccPreCheck(t *testing.T) {

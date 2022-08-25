@@ -27,11 +27,11 @@ func dataSendgridTemplateVersion() *schema.Resource {
 	}
 }
 
-func dataSendgridTemplateVersionRead(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func dataSendgridTemplateVersionRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	templateID := d.Get("template_id").(string)
 	c := m.(*sendgrid.Client)
 
-	template, err := c.ReadTemplate(templateID)
+	template, err := c.ReadTemplate(ctx, templateID)
 	if err != nil {
 		return diag.FromErr(err)
 	}

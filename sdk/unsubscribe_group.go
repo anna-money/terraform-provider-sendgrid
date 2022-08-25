@@ -43,7 +43,8 @@ func parseUnsubscribeGroups(respBody string) ([]UnsubscribeGroup, RequestError) 
 func (c *Client) CreateUnsubscribeGroup(
 	name string,
 	description string,
-	isDefault bool) (*UnsubscribeGroup, RequestError) {
+	isDefault bool,
+) (*UnsubscribeGroup, RequestError) {
 	if name == "" {
 		return nil, RequestError{
 			StatusCode: http.StatusInternalServerError,
@@ -111,7 +112,8 @@ func (c *Client) UpdateUnsubscribeGroup(
 	id string,
 	name string,
 	description string,
-	isDefault bool) (*UnsubscribeGroup, RequestError) {
+	isDefault bool,
+) (*UnsubscribeGroup, RequestError) {
 	if id == "" {
 		return nil, RequestError{
 			StatusCode: http.StatusInternalServerError,

@@ -72,7 +72,8 @@ func (c *Client) PatchEventWebhook(
 	dropped bool,
 	oauthClientID string,
 	oauthClientSecret string,
-	oauthTokenURL string) (*EventWebhook, RequestError) {
+	oauthTokenURL string,
+) (*EventWebhook, RequestError) {
 	if url == "" {
 		return nil, RequestError{
 			StatusCode: http.StatusInternalServerError,

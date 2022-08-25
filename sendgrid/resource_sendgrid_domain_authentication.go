@@ -131,7 +131,8 @@ func resourceSendgridDomainAuthentication() *schema.Resource { //nolint:funlen
 func resourceSendgridDomainAuthenticationCreate(
 	ctx context.Context,
 	d *schema.ResourceData,
-	m interface{}) diag.Diagnostics {
+	m interface{},
+) diag.Diagnostics {
 	c := m.(*sendgrid.Client)
 
 	domain := d.Get("domain").(string)
@@ -173,7 +174,8 @@ func resourceSendgridDomainAuthenticationCreate(
 func resourceSendgridDomainAuthenticationRead( //nolint:funlen,cyclop
 	_ context.Context,
 	d *schema.ResourceData,
-	m interface{}) diag.Diagnostics {
+	m interface{},
+) diag.Diagnostics {
 	c := m.(*sendgrid.Client)
 
 	auth, err := c.ReadDomainAuthentication(d.Id())
@@ -270,7 +272,8 @@ func resourceSendgridDomainAuthenticationRead( //nolint:funlen,cyclop
 func resourceSendgridDomainAuthenticationUpdate(
 	ctx context.Context,
 	d *schema.ResourceData,
-	m interface{}) diag.Diagnostics {
+	m interface{},
+) diag.Diagnostics {
 	c := m.(*sendgrid.Client)
 
 	isDefault := d.Get("is_default").(bool)
@@ -299,7 +302,8 @@ func resourceSendgridDomainAuthenticationUpdate(
 func resourceSendgridDomainAuthenticationDelete(
 	ctx context.Context,
 	d *schema.ResourceData,
-	m interface{}) diag.Diagnostics {
+	m interface{},
+) diag.Diagnostics {
 	c := m.(*sendgrid.Client)
 
 	_, err := sendgrid.RetryOnRateLimit(ctx, d, func() (interface{}, sendgrid.RequestError) {

@@ -1,6 +1,7 @@
 package sendgrid
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 )
@@ -19,7 +20,7 @@ type Templates struct {
 	Result []Template `json:"result"`
 }
 
-func parseTemplate(respBody string) (*Template, error) {
+func parseTemplate(ctx context.Context, respBody string) (*Template, error) {
 	var body Template
 
 	err := json.Unmarshal([]byte(respBody), &body)
@@ -30,7 +31,7 @@ func parseTemplate(respBody string) (*Template, error) {
 	return &body, nil
 }
 
-func parseTemplates(respBody string) ([]Template, error) {
+func parseTemplates(ctx context.Context, respBody string) ([]Template, error) {
 	var body Templates
 
 	err := json.Unmarshal([]byte(respBody), &body)
@@ -42,7 +43,7 @@ func parseTemplates(respBody string) ([]Template, error) {
 }
 
 // CreateTemplate creates a transactional template and returns it.
-func (c *Client) CreateTemplate(name, generation string) (*Template, error) {
+func (c *Client) CreateTemplate(ctx context.Context, name, generation string) (*Template, error) {
 	if name == "" {
 		return nil, ErrTemplateNameRequired
 	}
@@ -59,11 +60,11 @@ func (c *Client) CreateTemplate(name, generation string) (*Template, error) {
 		return nil, fmt.Errorf("failed creating template: %w", err)
 	}
 
-	return parseTemplate(respBody)
+	return parseTemplate(ctx, respBody)
 }
 
 // ReadTemplate retreives a transactional template and returns it.
-func (c *Client) ReadTemplate(id string) (*Template, error) {
+func (c *Client) ReadTemplate(ctx context.Context, id string) (*Template, error) {
 	if id == "" {
 		return nil, ErrTemplateIDRequired
 	}
@@ -73,21 +74,21 @@ func (c *Client) ReadTemplate(id string) (*Template, error) {
 		return nil, fmt.Errorf("failed reading template: %w", err)
 	}
 
-	return parseTemplate(respBody)
+	return parseTemplate(ctx, respBody)
 }
 
-func (c *Client) ReadTemplates(generation string) ([]Template, error) {
+func (c *Client) ReadTemplates(ctx context.Context, generation string) ([]Template, error) {
 	respBody, _, err := c.Get("GET", "/templates?page_size=200&generations="+generation)
 	if err != nil {
 		return nil, fmt.Errorf("failed reading template: %w", err)
 	}
 
-	return parseTemplates(respBody)
+	return parseTemplates(ctx, respBody)
 }
 
 // UpdateTemplate edits a transactional template and returns it.
 // We can't change the "generation" of a transactional template.
-func (c *Client) UpdateTemplate(id, name string) (*Template, error) {
+func (c *Client) UpdateTemplate(ctx context.Context, id, name string) (*Template, error) {
 	if id == "" {
 		return nil, ErrTemplateIDRequired
 	}
@@ -104,11 +105,11 @@ func (c *Client) UpdateTemplate(id, name string) (*Template, error) {
 		return nil, fmt.Errorf("failed updating template: %w", err)
 	}
 
-	return parseTemplate(respBody)
+	return parseTemplate(ctx, respBody)
 }
 
 // DeleteTemplate deletes a transactional template.
-func (c *Client) DeleteTemplate(id string) (bool, error) {
+func (c *Client) DeleteTemplate(ctx context.Context, id string) (bool, error) {
 	if id == "" {
 		return false, ErrTemplateIDRequired
 	}

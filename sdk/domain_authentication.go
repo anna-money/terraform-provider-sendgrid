@@ -59,7 +59,8 @@ func (c *Client) CreateDomainAuthentication(
 	customSpf bool,
 	isDefault bool,
 	automaticSecurity bool,
-	customDKIMSelector string) (*DomainAuthentication, RequestError) {
+	customDKIMSelector string,
+) (*DomainAuthentication, RequestError) {
 	if domain == "" {
 		return nil, RequestError{
 			StatusCode: http.StatusInternalServerError,
@@ -117,7 +118,8 @@ func (c *Client) ReadDomainAuthentication(id string) (*DomainAuthentication, Req
 func (c *Client) UpdateDomainAuthentication(
 	id string,
 	isDefault bool,
-	customSPF bool) (*DomainAuthentication, RequestError) {
+	customSPF bool,
+) (*DomainAuthentication, RequestError) {
 	if id == "" {
 		return nil, RequestError{
 			StatusCode: http.StatusInternalServerError,
