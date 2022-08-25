@@ -1,5 +1,11 @@
 # Terraform Provider for Sendgrid
 
+##  Usage
+
+Detailed documentation is available on the [Terraform provider registry](https://registry.terraform.io/providers/anna-money/sendgrid/latest).
+
+## Build
+
 To compile the provider, run `make build`. This will build the provider and put the provider binary in the `$GOPATH/bin` directory.
 
 ```sh
@@ -17,12 +23,6 @@ In order to run the full suite of Acceptance tests, run `make testacc`.
 ```sh
 make testacc
 ```
-
-## [Documentation](docs/index.md)
-
-The documentation is created thank's to a fork of [terraform-providers/terraform-provider-baiducloud](https://github.com/terraform-providers/terraform-provider-baiducloud/tree/master/gendocs).
-
-## [Terraform Registry](https://registry.terraform.io/providers/anna-money/sendgrid)
 
 ## Known issues
 
