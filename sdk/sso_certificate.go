@@ -1,6 +1,7 @@
 package sendgrid
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -16,6 +17,7 @@ type SSOCertificate struct {
 
 // CreateSSOCertificate creates an SSO certificate and returns it.
 func (c Client) CreateSSOCertificate(
+	ctx context.Context,
 	publicCertificate string,
 	integrationID string,
 ) (*SSOCertificate, RequestError) {
@@ -33,7 +35,7 @@ func (c Client) CreateSSOCertificate(
 		}
 	}
 
-	respBody, statusCode, err := c.Post("POST", "/sso/certificates", SSOCertificate{
+	respBody, statusCode, err := c.Post(ctx, "POST", "/sso/certificates", SSOCertificate{
 		IntegrationID:     integrationID,
 		PublicCertificate: publicCertificate,
 	})
@@ -55,7 +57,7 @@ func (c Client) CreateSSOCertificate(
 }
 
 // ReadSSOCertificate retrieves an SSO certificate by ID.
-func (c Client) ReadSSOCertificate(id string) (*SSOCertificate, RequestError) {
+func (c Client) ReadSSOCertificate(ctx context.Context, id string) (*SSOCertificate, RequestError) {
 	if id == "" {
 		return nil, RequestError{
 			StatusCode: http.StatusBadRequest,
@@ -63,7 +65,7 @@ func (c Client) ReadSSOCertificate(id string) (*SSOCertificate, RequestError) {
 		}
 	}
 
-	respBody, _, err := c.Get("GET", fmt.Sprintf("/sso/certificates/%s", id))
+	respBody, _, err := c.Get(ctx, "GET", fmt.Sprintf("/sso/certificates/%s", id))
 	if err != nil {
 		return nil, RequestError{
 			StatusCode: http.StatusInternalServerError,
@@ -76,6 +78,7 @@ func (c Client) ReadSSOCertificate(id string) (*SSOCertificate, RequestError) {
 
 // UpdateSSOCertificate updates an existing SSO certificate by ID.
 func (c Client) UpdateSSOCertificate(
+	ctx context.Context,
 	id string,
 	publicCertificate string,
 	integrationID string,
@@ -101,7 +104,7 @@ func (c Client) UpdateSSOCertificate(
 		}
 	}
 
-	respBody, statusCode, err := c.Post("PATCH", fmt.Sprintf("/sso/certificates/%s", id), SSOCertificate{
+	respBody, statusCode, err := c.Post(ctx, "PATCH", fmt.Sprintf("/sso/certificates/%s", id), SSOCertificate{
 		IntegrationID:     integrationID,
 		PublicCertificate: publicCertificate,
 	})
@@ -123,7 +126,7 @@ func (c Client) UpdateSSOCertificate(
 }
 
 // DeleteSSOCertificate deletes an SSO certificate by ID.
-func (c Client) DeleteSSOCertificate(id string) (bool, RequestError) {
+func (c Client) DeleteSSOCertificate(ctx context.Context, id string) (bool, RequestError) {
 	if id == "" {
 		return false, RequestError{
 			StatusCode: http.StatusBadRequest,
@@ -131,7 +134,7 @@ func (c Client) DeleteSSOCertificate(id string) (bool, RequestError) {
 		}
 	}
 
-	if _, statusCode, err := c.Get("DELETE", fmt.Sprintf("/sso/certificates/%s", id)); statusCode > 299 || err != nil {
+	if _, statusCode, err := c.Get(ctx, "DELETE", fmt.Sprintf("/sso/certificates/%s", id)); statusCode > 299 || err != nil {
 		return false, RequestError{
 			StatusCode: http.StatusInternalServerError,
 			Err:        fmt.Errorf("failed deleting SSO integration: %w", err),
@@ -145,8 +148,8 @@ func (c Client) DeleteSSOCertificate(id string) (bool, RequestError) {
 }
 
 // ListSSOCertificates retrieves all existing SSO certificates.
-func (c Client) ListSSOCertificates() ([]*SSOCertificate, RequestError) {
-	respBody, statusCode, err := c.Get("GET", "/sso/certificates")
+func (c Client) ListSSOCertificates(ctx context.Context) ([]*SSOCertificate, RequestError) {
+	respBody, statusCode, err := c.Get(ctx, "GET", "/sso/certificates")
 	if err != nil || statusCode >= 300 {
 		return nil, RequestError{
 			StatusCode: statusCode,

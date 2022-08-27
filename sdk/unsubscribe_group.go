@@ -1,6 +1,7 @@
 package sendgrid
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -41,6 +42,7 @@ func parseUnsubscribeGroups(respBody string) ([]UnsubscribeGroup, RequestError) 
 
 // CreateUnsubscribeGroup creates an UnsubscribeGroup and returns it.
 func (c *Client) CreateUnsubscribeGroup(
+	ctx context.Context,
 	name string,
 	description string,
 	isDefault bool,
@@ -52,7 +54,7 @@ func (c *Client) CreateUnsubscribeGroup(
 		}
 	}
 
-	respBody, statusCode, err := c.Post("POST", "/asm/groups", UnsubscribeGroup{
+	respBody, statusCode, err := c.Post(ctx, "POST", "/asm/groups", UnsubscribeGroup{
 		Name:        name,
 		Description: description,
 		IsDefault:   isDefault,
@@ -75,7 +77,7 @@ func (c *Client) CreateUnsubscribeGroup(
 }
 
 // ReadUnsubscribeGroup retreives an UnsubscribeGroup and returns it.
-func (c *Client) ReadUnsubscribeGroup(id string) (*UnsubscribeGroup, RequestError) {
+func (c *Client) ReadUnsubscribeGroup(ctx context.Context, id string) (*UnsubscribeGroup, RequestError) {
 	if id == "" {
 		return nil, RequestError{
 			StatusCode: http.StatusInternalServerError,
@@ -83,7 +85,7 @@ func (c *Client) ReadUnsubscribeGroup(id string) (*UnsubscribeGroup, RequestErro
 		}
 	}
 
-	respBody, _, err := c.Get("GET", "/asm/groups/"+id)
+	respBody, _, err := c.Get(ctx, "GET", "/asm/groups/"+id)
 	if err != nil {
 		return nil, RequestError{
 			StatusCode: http.StatusInternalServerError,
@@ -95,8 +97,8 @@ func (c *Client) ReadUnsubscribeGroup(id string) (*UnsubscribeGroup, RequestErro
 }
 
 // ReadUnsubscribeGroups retrieves all UnsubscribeGroup and returns them.
-func (c *Client) ReadUnsubscribeGroups() ([]UnsubscribeGroup, RequestError) {
-	respBody, _, err := c.Get("GET", "/asm/groups")
+func (c *Client) ReadUnsubscribeGroups(ctx context.Context) ([]UnsubscribeGroup, RequestError) {
+	respBody, _, err := c.Get(ctx, "GET", "/asm/groups")
 	if err != nil {
 		return nil, RequestError{
 			StatusCode: http.StatusInternalServerError,
@@ -109,6 +111,7 @@ func (c *Client) ReadUnsubscribeGroups() ([]UnsubscribeGroup, RequestError) {
 
 // UpdateUnsubscribeGroup edits an UnsubscribeGroup and returns it.
 func (c *Client) UpdateUnsubscribeGroup(
+	ctx context.Context,
 	id string,
 	name string,
 	description string,
@@ -129,7 +132,7 @@ func (c *Client) UpdateUnsubscribeGroup(
 		t.Description = description
 	}
 
-	respBody, _, err := c.Post("PATCH", "/asm/groups/"+id, t)
+	respBody, _, err := c.Post(ctx, "PATCH", "/asm/groups/"+id, t)
 	if err != nil {
 		return nil, RequestError{
 			StatusCode: http.StatusInternalServerError,
@@ -141,7 +144,7 @@ func (c *Client) UpdateUnsubscribeGroup(
 }
 
 // DeleteUnsubscribeGroup deletes an UnsubscribeGroup.
-func (c *Client) DeleteUnsubscribeGroup(id string) (bool, RequestError) {
+func (c *Client) DeleteUnsubscribeGroup(ctx context.Context, id string) (bool, RequestError) {
 	if id == "" {
 		return false, RequestError{
 			StatusCode: http.StatusInternalServerError,
@@ -149,7 +152,7 @@ func (c *Client) DeleteUnsubscribeGroup(id string) (bool, RequestError) {
 		}
 	}
 
-	responseBody, statusCode, err := c.Get("DELETE", "/asm/groups/"+id)
+	responseBody, statusCode, err := c.Get(ctx, "DELETE", "/asm/groups/"+id)
 	if err != nil {
 		return false, RequestError{
 			StatusCode: http.StatusInternalServerError,

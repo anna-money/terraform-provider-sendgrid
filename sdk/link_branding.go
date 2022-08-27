@@ -1,6 +1,7 @@
 package sendgrid
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -44,7 +45,7 @@ func parseLinkBranding(respBody string) (*LinkBranding, RequestError) {
 }
 
 // CreateLinkBranding creates an LinkBranding and returns it.
-func (c *Client) CreateLinkBranding(domain string, subdomain string, isDefault bool) (*LinkBranding, RequestError) {
+func (c *Client) CreateLinkBranding(ctx context.Context, domain string, subdomain string, isDefault bool) (*LinkBranding, RequestError) {
 	if domain == "" {
 		return nil, RequestError{
 			StatusCode: http.StatusInternalServerError,
@@ -52,7 +53,7 @@ func (c *Client) CreateLinkBranding(domain string, subdomain string, isDefault b
 		}
 	}
 
-	respBody, statusCode, err := c.Post("POST", "/whitelabel/links", LinkBranding{
+	respBody, statusCode, err := c.Post(ctx, "POST", "/whitelabel/links", LinkBranding{
 		Domain:    domain,
 		Subdomain: subdomain,
 		IsDefault: isDefault,
@@ -75,7 +76,7 @@ func (c *Client) CreateLinkBranding(domain string, subdomain string, isDefault b
 }
 
 // ReadLinkBranding retrieves an LinkBranding and returns it.
-func (c *Client) ReadLinkBranding(id string) (*LinkBranding, RequestError) {
+func (c *Client) ReadLinkBranding(ctx context.Context, id string) (*LinkBranding, RequestError) {
 	if id == "" {
 		return nil, RequestError{
 			StatusCode: http.StatusInternalServerError,
@@ -83,7 +84,7 @@ func (c *Client) ReadLinkBranding(id string) (*LinkBranding, RequestError) {
 		}
 	}
 
-	respBody, _, err := c.Get("GET", "/whitelabel/links/"+id)
+	respBody, _, err := c.Get(ctx, "GET", "/whitelabel/links/"+id)
 	if err != nil {
 		return nil, RequestError{
 			StatusCode: http.StatusInternalServerError,
@@ -95,7 +96,7 @@ func (c *Client) ReadLinkBranding(id string) (*LinkBranding, RequestError) {
 }
 
 // UpdateLinkBranding edits an LinkBranding and returns it.
-func (c *Client) UpdateLinkBranding(id string, isDefault bool) (*LinkBranding, RequestError) {
+func (c *Client) UpdateLinkBranding(ctx context.Context, id string, isDefault bool) (*LinkBranding, RequestError) {
 	if id == "" {
 		return nil, RequestError{
 			StatusCode: http.StatusInternalServerError,
@@ -106,7 +107,7 @@ func (c *Client) UpdateLinkBranding(id string, isDefault bool) (*LinkBranding, R
 	t := LinkBranding{}
 	t.IsDefault = isDefault
 
-	respBody, _, err := c.Post("PATCH", "/whitelabel/links/"+id, t)
+	respBody, _, err := c.Post(ctx, "PATCH", "/whitelabel/links/"+id, t)
 	if err != nil {
 		return nil, RequestError{
 			StatusCode: http.StatusInternalServerError,
@@ -117,7 +118,7 @@ func (c *Client) UpdateLinkBranding(id string, isDefault bool) (*LinkBranding, R
 	return parseLinkBranding(respBody)
 }
 
-func (c *Client) ValidateLinkBranding(id string) RequestError {
+func (c *Client) ValidateLinkBranding(ctx context.Context, id string) RequestError {
 	if id == "" {
 		return RequestError{
 			StatusCode: http.StatusInternalServerError,
@@ -125,7 +126,7 @@ func (c *Client) ValidateLinkBranding(id string) RequestError {
 		}
 	}
 
-	_, statusCode, err := c.Post("POST", "/whitelabel/links/"+id+"/validate", nil)
+	_, statusCode, err := c.Post(ctx, "POST", "/whitelabel/links/"+id+"/validate", nil)
 	if err != nil || statusCode != 200 {
 		return RequestError{
 			StatusCode: statusCode,
@@ -137,7 +138,7 @@ func (c *Client) ValidateLinkBranding(id string) RequestError {
 }
 
 // DeleteLinkBranding deletes an LinkBranding.
-func (c *Client) DeleteLinkBranding(id string) (bool, RequestError) {
+func (c *Client) DeleteLinkBranding(ctx context.Context, id string) (bool, RequestError) {
 	if id == "" {
 		return false, RequestError{
 			StatusCode: http.StatusInternalServerError,
@@ -145,7 +146,7 @@ func (c *Client) DeleteLinkBranding(id string) (bool, RequestError) {
 		}
 	}
 
-	responseBody, statusCode, err := c.Get("DELETE", "/whitelabel/links/"+id)
+	responseBody, statusCode, err := c.Get(ctx, "DELETE", "/whitelabel/links/"+id)
 	if err != nil {
 		return false, RequestError{
 			StatusCode: http.StatusInternalServerError,

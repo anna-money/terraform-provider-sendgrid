@@ -1,6 +1,7 @@
 package sendgrid
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -61,7 +62,7 @@ func parseSubUsers(respBody string) ([]SubUser, RequestError) {
 }
 
 // CreateSubuser creates a subuser and returns it.
-func (c *Client) CreateSubuser(username, email, password string, ips []string) (*SubUser, RequestError) {
+func (c *Client) CreateSubuser(ctx context.Context, username, email, password string, ips []string) (*SubUser, RequestError) {
 	if username == "" {
 		return nil, RequestError{StatusCode: http.StatusNotAcceptable, Err: ErrUsernameRequired}
 	}
@@ -78,7 +79,7 @@ func (c *Client) CreateSubuser(username, email, password string, ips []string) (
 		return nil, RequestError{StatusCode: http.StatusNotAcceptable, Err: ErrIPRequired}
 	}
 
-	respBody, statusCode, err := c.Post("POST", "/subusers", SubUser{
+	respBody, statusCode, err := c.Post(ctx, "POST", "/subusers", SubUser{
 		UserName:        username,
 		Email:           email,
 		Password:        password,
@@ -103,14 +104,14 @@ func (c *Client) CreateSubuser(username, email, password string, ips []string) (
 }
 
 // ReadSubUser retreives a subuser and returns it.
-func (c *Client) ReadSubUser(username string) ([]SubUser, RequestError) {
+func (c *Client) ReadSubUser(ctx context.Context, username string) ([]SubUser, RequestError) {
 	if username == "" {
 		return nil, RequestError{StatusCode: http.StatusNotAcceptable, Err: ErrUsernameRequired}
 	}
 
 	endpoint := "/subusers?username=" + url.QueryEscape(username)
 
-	respBody, statusCode, err := c.Get("GET", endpoint)
+	respBody, statusCode, err := c.Get(ctx, "GET", endpoint)
 	if err != nil {
 		return nil, RequestError{
 			StatusCode: statusCode,
@@ -122,12 +123,12 @@ func (c *Client) ReadSubUser(username string) ([]SubUser, RequestError) {
 }
 
 // UpdateSubuser enables/disables a subuser.
-func (c *Client) UpdateSubuser(username string, disabled bool) (bool, RequestError) {
+func (c *Client) UpdateSubuser(ctx context.Context, username string, disabled bool) (bool, RequestError) {
 	if username == "" {
 		return false, RequestError{StatusCode: http.StatusNotAcceptable, Err: ErrUsernameRequired}
 	}
 
-	respBody, statusCode, err := c.Post("PATCH", "/subusers/"+username, SubUser{
+	respBody, statusCode, err := c.Post(ctx, "PATCH", "/subusers/"+username, SubUser{
 		Disabled: disabled,
 	})
 	if err != nil {
@@ -148,12 +149,12 @@ func (c *Client) UpdateSubuser(username string, disabled bool) (bool, RequestErr
 	return len(body.Errors) == 0, RequestError{StatusCode: http.StatusOK, Err: nil}
 }
 
-func (c *Client) UpdateSubuserIPs(username string, ips []string) RequestError {
+func (c *Client) UpdateSubuserIPs(ctx context.Context, username string, ips []string) RequestError {
 	if username == "" {
 		return RequestError{StatusCode: http.StatusNotAcceptable, Err: ErrUsernameRequired}
 	}
 
-	_, statusCode, err := c.Post("PUT", "/subusers/"+username+"/ips", ips)
+	_, statusCode, err := c.Post(ctx, "PUT", "/subusers/"+username+"/ips", ips)
 	if err != nil {
 		return RequestError{
 			StatusCode: statusCode,
@@ -165,12 +166,12 @@ func (c *Client) UpdateSubuserIPs(username string, ips []string) RequestError {
 }
 
 // DeleteSubuser deletes a subuser.
-func (c *Client) DeleteSubuser(username string) (bool, RequestError) {
+func (c *Client) DeleteSubuser(ctx context.Context, username string) (bool, RequestError) {
 	if username == "" {
 		return false, RequestError{StatusCode: http.StatusNotAcceptable, Err: ErrUsernameRequired}
 	}
 
-	respBody, statusCode, err := c.Get("DELETE", "/subusers/"+username)
+	respBody, statusCode, err := c.Get(ctx, "DELETE", "/subusers/"+username)
 	if err != nil {
 		return false, RequestError{
 			StatusCode: http.StatusInternalServerError,
@@ -188,14 +189,14 @@ func (c *Client) DeleteSubuser(username string) (bool, RequestError) {
 	return true, RequestError{StatusCode: http.StatusOK, Err: nil}
 }
 
-func (c *Client) UpdateSubuserPassword(username string, oldPassword string, newPassword string) RequestError {
+func (c *Client) UpdateSubuserPassword(ctx context.Context, username string, oldPassword string, newPassword string) RequestError {
 	if newPassword == "" {
 		return RequestError{StatusCode: http.StatusBadRequest, Err: ErrSubUserPassword}
 	}
 
 	origOnBehalfOf := c.OnBehalfOf
 	c.OnBehalfOf = username
-	_, statusCode, err := c.Post("PUT", "/user/password", UpdateSubUserPassword{
+	_, statusCode, err := c.Post(ctx, "PUT", "/user/password", UpdateSubUserPassword{
 		NewPassword: newPassword,
 		OldPassword: oldPassword,
 	})

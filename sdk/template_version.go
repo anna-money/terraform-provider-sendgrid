@@ -1,6 +1,7 @@
 package sendgrid
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 )
@@ -34,7 +35,7 @@ func parseTemplateVersion(respBody string) (*TemplateVersion, error) {
 }
 
 // CreateTemplateVersion creates a new version of a transactional template and returns it.
-func (c *Client) CreateTemplateVersion(t TemplateVersion) (*TemplateVersion, error) {
+func (c *Client) CreateTemplateVersion(ctx context.Context, t TemplateVersion) (*TemplateVersion, error) {
 	if t.TemplateID == "" {
 		return nil, ErrTemplateVersionIDRequired
 	}
@@ -47,7 +48,7 @@ func (c *Client) CreateTemplateVersion(t TemplateVersion) (*TemplateVersion, err
 		return nil, ErrTemplateVersionSubjectRequired
 	}
 
-	respBody, _, err := c.Post("POST", "/templates/"+t.TemplateID+"/versions", t)
+	respBody, _, err := c.Post(ctx, "POST", "/templates/"+t.TemplateID+"/versions", t)
 	if err != nil {
 		return nil, fmt.Errorf("failed creating template version: %w", err)
 	}
@@ -56,7 +57,7 @@ func (c *Client) CreateTemplateVersion(t TemplateVersion) (*TemplateVersion, err
 }
 
 // ReadTemplateVersion retreives a version of a transactional template and returns it.
-func (c *Client) ReadTemplateVersion(templateID, id string) (*TemplateVersion, error) {
+func (c *Client) ReadTemplateVersion(ctx context.Context, templateID, id string) (*TemplateVersion, error) {
 	if templateID == "" {
 		return nil, ErrTemplateVersionIDRequired
 	}
@@ -65,7 +66,7 @@ func (c *Client) ReadTemplateVersion(templateID, id string) (*TemplateVersion, e
 		return nil, ErrTemplateIDRequired
 	}
 
-	respBody, _, err := c.Get("GET", "/templates/"+templateID+"/versions/"+id)
+	respBody, _, err := c.Get(ctx, "GET", "/templates/"+templateID+"/versions/"+id)
 	if err != nil {
 		return nil, fmt.Errorf("failed reading template version: %w", err)
 	}
@@ -74,7 +75,7 @@ func (c *Client) ReadTemplateVersion(templateID, id string) (*TemplateVersion, e
 }
 
 // UpdateTemplateVersion edits a version of a transactional template and returns it.
-func (c *Client) UpdateTemplateVersion(t TemplateVersion) (*TemplateVersion, error) {
+func (c *Client) UpdateTemplateVersion(ctx context.Context, t TemplateVersion) (*TemplateVersion, error) {
 	if t.ID == "" {
 		return nil, ErrTemplateVersionIDRequired
 	}
@@ -83,7 +84,7 @@ func (c *Client) UpdateTemplateVersion(t TemplateVersion) (*TemplateVersion, err
 		return nil, ErrTemplateIDRequired
 	}
 
-	respBody, _, err := c.Post("PATCH", "/templates/"+t.TemplateID+"/versions/"+t.ID, t)
+	respBody, _, err := c.Post(ctx, "PATCH", "/templates/"+t.TemplateID+"/versions/"+t.ID, t)
 	if err != nil {
 		return nil, fmt.Errorf("failed updating template version: %w", err)
 	}
@@ -92,12 +93,12 @@ func (c *Client) UpdateTemplateVersion(t TemplateVersion) (*TemplateVersion, err
 }
 
 // DeleteTemplateVersion deletes a version of a transactional template.
-func (c *Client) DeleteTemplateVersion(templateID, id string) (bool, error) {
+func (c *Client) DeleteTemplateVersion(ctx context.Context, templateID, id string) (bool, error) {
 	if templateID == "" {
 		return false, ErrTemplateVersionIDRequired
 	}
 
-	if _, statusCode, err := c.Get("DELETE", "/templates/"+templateID+"/versions/"+id); statusCode > 299 ||
+	if _, statusCode, err := c.Get(ctx, "DELETE", "/templates/"+templateID+"/versions/"+id); statusCode > 299 ||
 		err != nil {
 		return false, fmt.Errorf("failed deleting template version: %w", err)
 	}

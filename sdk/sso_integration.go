@@ -1,6 +1,7 @@
 package sendgrid
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -21,6 +22,7 @@ type SSOIntegration struct {
 
 // CreateSSOIntegration creates an SSO integration and returns it.
 func (c Client) CreateSSOIntegration(
+	ctx context.Context,
 	name string,
 	enabled bool,
 	signInURL string,
@@ -34,7 +36,7 @@ func (c Client) CreateSSOIntegration(
 		}
 	}
 
-	respBody, statusCode, err := c.Post("POST", "/sso/integrations", SSOIntegration{
+	respBody, statusCode, err := c.Post(ctx, "POST", "/sso/integrations", SSOIntegration{
 		Name:       name,
 		Enabled:    enabled,
 		SignInURL:  signInURL,
@@ -59,7 +61,7 @@ func (c Client) CreateSSOIntegration(
 }
 
 // ReadSSOIntegration retrieves an SSO integration by ID.
-func (c Client) ReadSSOIntegration(id string) (*SSOIntegration, RequestError) {
+func (c Client) ReadSSOIntegration(ctx context.Context, id string) (*SSOIntegration, RequestError) {
 	if id == "" {
 		return nil, RequestError{
 			StatusCode: http.StatusBadRequest,
@@ -67,7 +69,7 @@ func (c Client) ReadSSOIntegration(id string) (*SSOIntegration, RequestError) {
 		}
 	}
 
-	respBody, _, err := c.Get("GET", fmt.Sprintf("/sso/integrations/%s", id))
+	respBody, _, err := c.Get(ctx, "GET", fmt.Sprintf("/sso/integrations/%s", id))
 	if err != nil {
 		return nil, RequestError{
 			StatusCode: http.StatusInternalServerError,
@@ -80,6 +82,7 @@ func (c Client) ReadSSOIntegration(id string) (*SSOIntegration, RequestError) {
 
 // UpdateSSOIntegration updates an existing SSO integration by ID.
 func (c Client) UpdateSSOIntegration(
+	ctx context.Context,
 	id string,
 	name string,
 	enabled bool,
@@ -101,7 +104,7 @@ func (c Client) UpdateSSOIntegration(
 		}
 	}
 
-	respBody, statusCode, err := c.Post("PATCH", fmt.Sprintf("/sso/integrations/%s", id), SSOIntegration{
+	respBody, statusCode, err := c.Post(ctx, "PATCH", fmt.Sprintf("/sso/integrations/%s", id), SSOIntegration{
 		Name:       name,
 		Enabled:    enabled,
 		SignInURL:  signInURL,
@@ -126,7 +129,7 @@ func (c Client) UpdateSSOIntegration(
 }
 
 // DeleteSSOIntegration deletes an SSO integration by ID.
-func (c Client) DeleteSSOIntegration(id string) (bool, RequestError) {
+func (c Client) DeleteSSOIntegration(ctx context.Context, id string) (bool, RequestError) {
 	if id == "" {
 		return false, RequestError{
 			StatusCode: http.StatusBadRequest,
@@ -134,7 +137,7 @@ func (c Client) DeleteSSOIntegration(id string) (bool, RequestError) {
 		}
 	}
 
-	if _, statusCode, err := c.Get("DELETE", fmt.Sprintf("/sso/integrations/%s", id)); statusCode > 299 || err != nil {
+	if _, statusCode, err := c.Get(ctx, "DELETE", fmt.Sprintf("/sso/integrations/%s", id)); statusCode > 299 || err != nil {
 		return false, RequestError{
 			StatusCode: http.StatusInternalServerError,
 			Err:        fmt.Errorf("failed to delete SSO integration: %w", err),
@@ -148,8 +151,8 @@ func (c Client) DeleteSSOIntegration(id string) (bool, RequestError) {
 }
 
 // ListSSOIntegrations returns a list of SSO integrations.
-func (c Client) ListSSOIntegrations() ([]*SSOIntegration, RequestError) {
-	respBody, statusCode, err := c.Get("GET", "/sso/integrations")
+func (c Client) ListSSOIntegrations(ctx context.Context) ([]*SSOIntegration, RequestError) {
+	respBody, statusCode, err := c.Get(ctx, "GET", "/sso/integrations")
 	if err != nil || statusCode >= 300 {
 		return nil, RequestError{
 			StatusCode: statusCode,

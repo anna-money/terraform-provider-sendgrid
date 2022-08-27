@@ -1,6 +1,7 @@
 package sendgrid_test
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -39,7 +40,8 @@ func testAccCheckSendgridTemplateDestroy(s *terraform.State) error {
 
 		templateID := rs.Primary.ID
 
-		_, err := c.DeleteTemplate(templateID)
+		ctx := context.Background()
+		_, err := c.DeleteTemplate(ctx, templateID)
 		if err != nil {
 			return err
 		}

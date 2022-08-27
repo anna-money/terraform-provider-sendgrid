@@ -1,6 +1,7 @@
 package sendgrid
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -28,6 +29,7 @@ func parseParseWebhook(respBody string) (*ParseWebhook, RequestError) {
 
 // CreateParseWebhook creates an ParseWebhook and returns it.
 func (c *Client) CreateParseWebhook(
+	ctx context.Context,
 	hostname string,
 	url string,
 	spamCheck bool,
@@ -47,7 +49,7 @@ func (c *Client) CreateParseWebhook(
 		}
 	}
 
-	respBody, statusCode, err := c.Post("POST", "/user/webhooks/parse/settings", ParseWebhook{
+	respBody, statusCode, err := c.Post(ctx, "POST", "/user/webhooks/parse/settings", ParseWebhook{
 		Hostname:  hostname,
 		URL:       url,
 		SpamCheck: spamCheck,
@@ -71,7 +73,7 @@ func (c *Client) CreateParseWebhook(
 }
 
 // ReadParseWebhook retreives an ParseWebhook and returns it.
-func (c *Client) ReadParseWebhook(hostname string) (*ParseWebhook, RequestError) {
+func (c *Client) ReadParseWebhook(ctx context.Context, hostname string) (*ParseWebhook, RequestError) {
 	if hostname == "" {
 		return nil, RequestError{
 			StatusCode: http.StatusInternalServerError,
@@ -79,7 +81,7 @@ func (c *Client) ReadParseWebhook(hostname string) (*ParseWebhook, RequestError)
 		}
 	}
 
-	respBody, _, err := c.Get("GET", "/user/webhooks/parse/settings/"+hostname)
+	respBody, _, err := c.Get(ctx, "GET", "/user/webhooks/parse/settings/"+hostname)
 	if err != nil {
 		return nil, RequestError{
 			StatusCode: http.StatusInternalServerError,
@@ -91,7 +93,7 @@ func (c *Client) ReadParseWebhook(hostname string) (*ParseWebhook, RequestError)
 }
 
 // UpdateParseWebhook edits an ParseWebhook and returns it.
-func (c *Client) UpdateParseWebhook(hostname string, spamCheck bool, sendRaw bool) RequestError {
+func (c *Client) UpdateParseWebhook(ctx context.Context, hostname string, spamCheck bool, sendRaw bool) RequestError {
 	if hostname == "" {
 		return RequestError{
 			StatusCode: http.StatusInternalServerError,
@@ -103,7 +105,7 @@ func (c *Client) UpdateParseWebhook(hostname string, spamCheck bool, sendRaw boo
 	t.SpamCheck = spamCheck
 	t.SendRaw = sendRaw
 
-	_, _, err := c.Post("PUT", "/user/webhooks/parse/settings/"+hostname, t)
+	_, _, err := c.Post(ctx, "PUT", "/user/webhooks/parse/settings/"+hostname, t)
 	if err != nil {
 		return RequestError{
 			StatusCode: http.StatusInternalServerError,
@@ -117,7 +119,7 @@ func (c *Client) UpdateParseWebhook(hostname string, spamCheck bool, sendRaw boo
 }
 
 // DeleteParseWebhook deletes an ParseWebhook.
-func (c *Client) DeleteParseWebhook(hostname string) (bool, RequestError) {
+func (c *Client) DeleteParseWebhook(ctx context.Context, hostname string) (bool, RequestError) {
 	if hostname == "" {
 		return false, RequestError{
 			StatusCode: http.StatusInternalServerError,
@@ -125,7 +127,7 @@ func (c *Client) DeleteParseWebhook(hostname string) (bool, RequestError) {
 		}
 	}
 
-	responseBody, statusCode, err := c.Get("DELETE", "/user/webhooks/parse/settings/"+hostname)
+	responseBody, statusCode, err := c.Get(ctx, "DELETE", "/user/webhooks/parse/settings/"+hostname)
 	if err != nil {
 		return false, RequestError{
 			StatusCode: http.StatusInternalServerError,

@@ -79,7 +79,7 @@ func resourceSendgridParseWebhookCreate(ctx context.Context, d *schema.ResourceD
 	sendRaw := d.Get("send_raw").(bool)
 
 	parseWebhookStruct, err := sendgrid.RetryOnRateLimit(ctx, d, func() (interface{}, sendgrid.RequestError) {
-		return c.CreateParseWebhook(hostname, url, spamCheck, sendRaw)
+		return c.CreateParseWebhook(ctx, hostname, url, spamCheck, sendRaw)
 	})
 
 	webhook := parseWebhookStruct.(*sendgrid.ParseWebhook)
@@ -93,10 +93,10 @@ func resourceSendgridParseWebhookCreate(ctx context.Context, d *schema.ResourceD
 	return resourceSendgridParseWebhookRead(ctx, d, m)
 }
 
-func resourceSendgridParseWebhookRead(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceSendgridParseWebhookRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	c := m.(*sendgrid.Client)
 
-	webhook, err := c.ReadParseWebhook(d.Id())
+	webhook, err := c.ReadParseWebhook(ctx, d.Id())
 	if err.Err != nil {
 		return diag.FromErr(err.Err)
 	}
@@ -120,7 +120,7 @@ func resourceSendgridParseWebhookUpdate(ctx context.Context, d *schema.ResourceD
 	sendRaw := d.Get("send_raw").(bool)
 
 	_, err := sendgrid.RetryOnRateLimit(ctx, d, func() (interface{}, sendgrid.RequestError) {
-		return nil, c.UpdateParseWebhook(d.Id(), spamCheck, sendRaw)
+		return nil, c.UpdateParseWebhook(ctx, d.Id(), spamCheck, sendRaw)
 	})
 	if err != nil {
 		return diag.FromErr(err)
@@ -133,7 +133,7 @@ func resourceSendgridParseWebhookDelete(ctx context.Context, d *schema.ResourceD
 	c := m.(*sendgrid.Client)
 
 	_, err := sendgrid.RetryOnRateLimit(ctx, d, func() (interface{}, sendgrid.RequestError) {
-		return c.DeleteParseWebhook(d.Id())
+		return c.DeleteParseWebhook(ctx, d.Id())
 	})
 	if err != nil {
 		return diag.FromErr(err)

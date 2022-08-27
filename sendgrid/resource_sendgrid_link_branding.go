@@ -108,7 +108,7 @@ func resourceSendgridLinkBrandingCreate(ctx context.Context, d *schema.ResourceD
 	isDefault := d.Get("is_default").(bool)
 
 	apiKeyStruct, err := sendgrid.RetryOnRateLimit(ctx, d, func() (interface{}, sendgrid.RequestError) {
-		return c.CreateLinkBranding(domain, subdomain, isDefault)
+		return c.CreateLinkBranding(ctx, domain, subdomain, isDefault)
 	})
 
 	link := apiKeyStruct.(*sendgrid.LinkBranding)
@@ -122,10 +122,10 @@ func resourceSendgridLinkBrandingCreate(ctx context.Context, d *schema.ResourceD
 	return resourceSendgridLinkBrandingRead(ctx, d, m)
 }
 
-func resourceSendgridLinkBrandingRead(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceSendgridLinkBrandingRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	c := m.(*sendgrid.Client)
 
-	link, err := c.ReadLinkBranding(d.Id())
+	link, err := c.ReadLinkBranding(ctx, d.Id())
 	if err.Err != nil {
 		return diag.FromErr(err.Err)
 	}
@@ -173,14 +173,14 @@ func resourceSendgridLinkBrandingUpdate(ctx context.Context, d *schema.ResourceD
 	isDefault := d.Get("is_default").(bool)
 
 	link, err := sendgrid.RetryOnRateLimit(ctx, d, func() (interface{}, sendgrid.RequestError) {
-		return c.UpdateLinkBranding(d.Id(), isDefault)
+		return c.UpdateLinkBranding(ctx, d.Id(), isDefault)
 	})
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	if !link.(*sendgrid.LinkBranding).Valid && d.Get("valid").(bool) {
-		if err := c.ValidateLinkBranding(d.Id()); err.Err != nil || err.StatusCode != 200 {
+		if err := c.ValidateLinkBranding(ctx, d.Id()); err.Err != nil || err.StatusCode != 200 {
 			if err.Err != nil {
 				return diag.FromErr(err.Err)
 			}
@@ -196,7 +196,7 @@ func resourceSendgridLinkBrandingDelete(ctx context.Context, d *schema.ResourceD
 	c := m.(*sendgrid.Client)
 
 	_, err := sendgrid.RetryOnRateLimit(ctx, d, func() (interface{}, sendgrid.RequestError) {
-		return c.DeleteLinkBranding(d.Id())
+		return c.DeleteLinkBranding(ctx, d.Id())
 	})
 	if err != nil {
 		return diag.FromErr(err)

@@ -1,6 +1,7 @@
 package sendgrid
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -53,6 +54,7 @@ func ParseDomainAuthentication(respBody string) (*DomainAuthentication, RequestE
 
 // CreateDomainAuthentication creates an DomainAuthentication and returns it.
 func (c *Client) CreateDomainAuthentication(
+	ctx context.Context,
 	domain string,
 	subdomain string,
 	ips []string,
@@ -68,7 +70,7 @@ func (c *Client) CreateDomainAuthentication(
 		}
 	}
 
-	respBody, statusCode, err := c.Post("POST", "/whitelabel/domains", DomainAuthentication{
+	respBody, statusCode, err := c.Post(ctx, "POST", "/whitelabel/domains", DomainAuthentication{
 		Domain:             domain,
 		Subdomain:          subdomain,
 		IPs:                ips,
@@ -95,7 +97,7 @@ func (c *Client) CreateDomainAuthentication(
 }
 
 // ReadDomainAuthentication retrieves an DomainAuthentication and returns it.
-func (c *Client) ReadDomainAuthentication(id string) (*DomainAuthentication, RequestError) {
+func (c *Client) ReadDomainAuthentication(ctx context.Context, id string) (*DomainAuthentication, RequestError) {
 	if id == "" {
 		return nil, RequestError{
 			StatusCode: http.StatusInternalServerError,
@@ -103,7 +105,7 @@ func (c *Client) ReadDomainAuthentication(id string) (*DomainAuthentication, Req
 		}
 	}
 
-	respBody, _, err := c.Get("GET", "/whitelabel/domains/"+id)
+	respBody, _, err := c.Get(ctx, "GET", "/whitelabel/domains/"+id)
 	if err != nil {
 		return nil, RequestError{
 			StatusCode: http.StatusInternalServerError,
@@ -116,6 +118,7 @@ func (c *Client) ReadDomainAuthentication(id string) (*DomainAuthentication, Req
 
 // UpdateDomainAuthentication edits an DomainAuthentication and returns it.
 func (c *Client) UpdateDomainAuthentication(
+	ctx context.Context,
 	id string,
 	isDefault bool,
 	customSPF bool,
@@ -131,7 +134,7 @@ func (c *Client) UpdateDomainAuthentication(
 	t.IsDefault = isDefault
 	t.CustomSPF = customSPF
 
-	respBody, _, err := c.Post("PATCH", "/whitelabel/domains/"+id, t)
+	respBody, _, err := c.Post(ctx, "PATCH", "/whitelabel/domains/"+id, t)
 	if err != nil {
 		return nil, RequestError{
 			StatusCode: http.StatusInternalServerError,
@@ -142,7 +145,7 @@ func (c *Client) UpdateDomainAuthentication(
 	return ParseDomainAuthentication(respBody)
 }
 
-func (c *Client) ValidateDomainAuthentication(id string) RequestError {
+func (c *Client) ValidateDomainAuthentication(ctx context.Context, id string) RequestError {
 	if id == "" {
 		return RequestError{
 			StatusCode: http.StatusInternalServerError,
@@ -150,7 +153,7 @@ func (c *Client) ValidateDomainAuthentication(id string) RequestError {
 		}
 	}
 
-	_, statusCode, err := c.Post("POST", "/whitelabel/domains/"+id+"/validate", nil)
+	_, statusCode, err := c.Post(ctx, "POST", "/whitelabel/domains/"+id+"/validate", nil)
 	if err != nil || statusCode != 200 {
 		return RequestError{
 			StatusCode: statusCode,
@@ -162,7 +165,7 @@ func (c *Client) ValidateDomainAuthentication(id string) RequestError {
 }
 
 // DeleteDomainAuthentication deletes an DomainAuthentication.
-func (c *Client) DeleteDomainAuthentication(id string) (bool, RequestError) {
+func (c *Client) DeleteDomainAuthentication(ctx context.Context, id string) (bool, RequestError) {
 	if id == "" {
 		return false, RequestError{
 			StatusCode: http.StatusInternalServerError,
@@ -170,7 +173,7 @@ func (c *Client) DeleteDomainAuthentication(id string) (bool, RequestError) {
 		}
 	}
 
-	responseBody, statusCode, err := c.Get("DELETE", "/whitelabel/domains/"+id)
+	responseBody, statusCode, err := c.Get(ctx, "DELETE", "/whitelabel/domains/"+id)
 	if err != nil {
 		return false, RequestError{
 			StatusCode: http.StatusInternalServerError,

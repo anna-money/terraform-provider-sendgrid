@@ -119,10 +119,10 @@ func resourceSendgridTemplateVersion() *schema.Resource { //nolint:funlen
 	}
 }
 
-func resourceSendgridTemplateVersionCreate(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceSendgridTemplateVersionCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	c := m.(*sendgrid.Client)
 
-	templateVersion, err := c.CreateTemplateVersion(sendgrid.TemplateVersion{
+	templateVersion, err := c.CreateTemplateVersion(ctx, sendgrid.TemplateVersion{
 		TemplateID:           d.Get("template_id").(string),
 		Active:               d.Get("active").(int),
 		Name:                 d.Get("name").(string),
@@ -143,10 +143,10 @@ func resourceSendgridTemplateVersionCreate(_ context.Context, d *schema.Resource
 	return nil
 }
 
-func resourceSendgridTemplateVersionRead(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceSendgridTemplateVersionRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	c := m.(*sendgrid.Client)
 
-	templateVersion, err := c.ReadTemplateVersion(d.Get("template_id").(string), d.Id())
+	templateVersion, err := c.ReadTemplateVersion(ctx, d.Get("template_id").(string), d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -243,17 +243,17 @@ func resourceSendgridTemplateVersionUpdate(
 		return nil
 	}
 
-	if _, err := c.UpdateTemplateVersion(templateVersion); err != nil {
+	if _, err := c.UpdateTemplateVersion(ctx, templateVersion); err != nil {
 		return diag.FromErr(err)
 	}
 
 	return resourceSendgridTemplateVersionRead(ctx, d, m)
 }
 
-func resourceSendgridTemplateVersionDelete(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceSendgridTemplateVersionDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	c := m.(*sendgrid.Client)
 
-	_, err := c.DeleteTemplateVersion(d.Get("template_id").(string), d.Id())
+	_, err := c.DeleteTemplateVersion(ctx, d.Get("template_id").(string), d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}

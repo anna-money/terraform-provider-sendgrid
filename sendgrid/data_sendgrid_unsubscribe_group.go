@@ -49,7 +49,7 @@ func dataSendgridUnsubscribeGroupRead(context context.Context, d *schema.Resourc
 
 		return resourceSendgridUnsubscribeGroupRead(context, d, m)
 	case name != "":
-		groups, err := c.ReadUnsubscribeGroups()
+		groups, err := c.ReadUnsubscribeGroups(context)
 		if err.Err != nil {
 			return diag.FromErr(err.Err)
 		}
