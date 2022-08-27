@@ -25,3 +25,4 @@ override.tf.json
 terraform.rc
 terraform
 scripts/gendocs
+terraform-provider-sendgrid-*

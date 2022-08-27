@@ -15,7 +15,7 @@ type APIKey struct {
 	Scopes []string `json:"scopes,omitempty"`
 }
 
-func parseAPIKey(ctx context.Context, respBody string) (*APIKey, RequestError) {
+func parseAPIKey(respBody string) (*APIKey, RequestError) {
 	var body APIKey
 	if err := json.Unmarshal([]byte(respBody), &body); err != nil {
 		return nil, RequestError{
@@ -27,7 +27,7 @@ func parseAPIKey(ctx context.Context, respBody string) (*APIKey, RequestError) {
 	return &body, RequestError{StatusCode: http.StatusOK, Err: nil}
 }
 
-func parseAPIKeys(ctx context.Context, respBody string) ([]APIKey, RequestError) {
+func parseAPIKeys(respBody string) ([]APIKey, RequestError) {
 	var body []APIKey
 	if err := json.Unmarshal([]byte(respBody), &body); err != nil {
 		return nil, RequestError{
@@ -66,7 +66,7 @@ func (c *Client) CreateAPIKey(ctx context.Context, name string, scopes []string)
 		}
 	}
 
-	return parseAPIKey(ctx, respBody)
+	return parseAPIKey(respBody)
 }
 
 // ReadAPIKey retreives an APIKey and returns it.
@@ -86,7 +86,7 @@ func (c *Client) ReadAPIKey(ctx context.Context, id string) (*APIKey, RequestErr
 		}
 	}
 
-	return parseAPIKey(ctx, respBody)
+	return parseAPIKey(respBody)
 }
 
 func (c *Client) ReadAPIKeys(ctx context.Context) ([]APIKey, RequestError) {
@@ -98,7 +98,7 @@ func (c *Client) ReadAPIKeys(ctx context.Context) ([]APIKey, RequestError) {
 		}
 	}
 
-	return parseAPIKeys(ctx, respBody)
+	return parseAPIKeys(respBody)
 }
 
 // UpdateAPIKey edits an APIKey and returns it.
@@ -127,7 +127,7 @@ func (c *Client) UpdateAPIKey(ctx context.Context, id, name string, scopes []str
 		}
 	}
 
-	return parseAPIKey(ctx, respBody)
+	return parseAPIKey(respBody)
 }
 
 // DeleteAPIKey deletes an APIKey.
