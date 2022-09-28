@@ -184,7 +184,7 @@ func (e APIError) Detail() string {
 }
 
 func (e APIError) Error() string {
-	return fmt.Sprintf("sentry: %s", e.Detail())
+	return fmt.Sprintf("sendgrid: %s", e.Detail())
 }
 
 // Empty returns true if empty.

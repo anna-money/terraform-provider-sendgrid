@@ -1,12 +1,15 @@
 /*
-Provide a resource to manage a subuser.
+Provide a resource to manage a sso user.
 Example Usage
 ```hcl
 
-	resource "sendgrid_teammate" "user" {
-		email    = arslanbekov@gmail.com
-		is_admin = false
-		scopes   = [
+	resource "sendgrid_teammate_sso" "user" {
+		first_name   = "Denis"
+		last_name    = "Arslanbekov"
+		email        = arslanbekov@gmail.com
+		is_read_only = falst
+		is_admin     = false
+		scopes       = [
 			""
 		]
 	}
@@ -23,12 +26,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func resourceSendgridTeammate() *schema.Resource {
+func resourceSendgridTeammateSSO() *schema.Resource {
 	return &schema.Resource{
-		CreateContext: resourceSendgridTeammateCreate,
-		ReadContext:   resourceSendgridTeammateRead,
-		UpdateContext: resourceSendgridTeammateUpdate,
-		DeleteContext: resourceSendgridTeammateDelete,
+		CreateContext: resourceSendgridTeammateSSOCreate,
+		ReadContext:   resourceSendgridTeammateSSORead,
+		UpdateContext: resourceSendgridTeammateSSOUpdate,
+		DeleteContext: resourceSendgridTeammateSSODelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -55,10 +58,13 @@ func resourceSendgridTeammate() *schema.Resource {
 	}
 }
 
-func resourceSendgridTeammateCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceSendgridTeammateSSOCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*sendgrid.Client)
 
+	first_name := d.Get("first_name").(string)
+	last_name := d.Get("last_name").(string)
 	email := d.Get("email").(string)
+	is_read_only := d.Get("is_read_only").(bool)
 	is_admin := d.Get("is_admin").(bool)
 	scopesSet := d.Get("scopes").(*schema.Set).List()
 	scopes := make([]string, 0)
@@ -69,7 +75,7 @@ func resourceSendgridTeammateCreate(ctx context.Context, d *schema.ResourceData,
 
 	tflog.Debug(ctx, "Creating teammate", map[string]interface{}{"email": email, "is_admin": is_admin, "scopes": scopes})
 
-	user, err := client.CreateUser(ctx, email, scopes, is_admin)
+	user, err := client.CreateUserSSO(ctx, first_name, last_name, email, scopes, is_read_only, is_admin)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -78,7 +84,7 @@ func resourceSendgridTeammateCreate(ctx context.Context, d *schema.ResourceData,
 	return nil
 }
 
-func resourceSendgridTeammateRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceSendgridTeammateSSORead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	c := m.(*sendgrid.Client)
 
 	var diags diag.Diagnostics
@@ -96,7 +102,7 @@ func resourceSendgridTeammateRead(ctx context.Context, d *schema.ResourceData, m
 	return diags
 }
 
-func resourceSendgridTeammateUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceSendgridTeammateSSOUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	c := m.(*sendgrid.Client)
 
 	scopesSet := d.Get("scopes").(*schema.Set).List()
@@ -106,7 +112,7 @@ func resourceSendgridTeammateUpdate(ctx context.Context, d *schema.ResourceData,
 		scopes = append(scopes, scope.(string))
 	}
 
-	_, err := c.UpdateUser(ctx, d.Get("email").(string), scopes, d.Get("is_admin").(bool))
+	_, err := c.UpdateUserSSO(ctx, d.Get("first_name").(string), d.Get("last_name").(string), d.Get("email").(string), scopes, d.Get("is_read_only").(bool), d.Get("is_admin").(bool))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -114,7 +120,7 @@ func resourceSendgridTeammateUpdate(ctx context.Context, d *schema.ResourceData,
 	return resourceSendgridTeammateRead(ctx, d, m)
 }
 
-func resourceSendgridTeammateDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceSendgridTeammateSSODelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	c := m.(*sendgrid.Client)
 	var diags diag.Diagnostics
 	userEmail := d.Id()

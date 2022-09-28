@@ -2,6 +2,7 @@ package sendgrid
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 )
 
@@ -11,66 +12,59 @@ type User struct {
 	Scopes  []string `json:"scopes,omitempty"`
 }
 
-//type SsoUser struct {
-//	FirstName  string   `json:"first_name"`
-//	LastName   string   `json:"last_name"`
-//	Email      string   `json:"email"`
-//	IsAdmin    string   `json:"is_admin"`
-//	IsReadOnly string   `json:"is_read_only"`
-//	Scopes     []string `json:"scopes"`
-//}
+func parseUser(respBody string) (*User, error) {
+	var body User
 
-func (c *Client) InviteTeammate(ctx context.Context, email string, scopes []string, isAdmin bool) (*User, error) {
-	_, err := c.NewRequest("POST", "/teammates", User{
+	err := json.Unmarshal([]byte(respBody), &body)
+	if err != nil {
+		return nil, fmt.Errorf("failed parsing template: %w", err)
+	}
+
+	return &body, nil
+}
+
+func (c *Client) CreateUser(ctx context.Context, email string, scopes []string, isAdmin bool) (*User, error) {
+	respBody, _, err := c.Post(ctx, "POST", "/teammates", User{
 		Email:   email,
 		IsAdmin: isAdmin,
 		Scopes:  scopes,
 	})
+
 	if err != nil {
 		return nil, err
 	}
 
-	return c.ReadTeammate(ctx, email)
+	return parseUser(respBody)
 }
 
-func (c *Client) ReadTeammate(ctx context.Context, email string) (*User, error) {
-	u := fmt.Sprintf("/teammates/%s/", email)
-	req, err := c.NewRequest("GET", u, nil)
+func (c *Client) ReadUser(ctx context.Context, email string) (*User, error) {
+	respBody, _, err := c.Get(ctx, "GET", "/teammates/"+email)
 	if err != nil {
 		return nil, err
 	}
 
-	user := new(User)
-	_, err = c.Do(ctx, req, user)
-	if err != nil {
-		return user, err
-	}
-
-	return user, nil
+	return parseUser(respBody)
 }
 
-//func (c *Client) UpdateUser(ctx context.Context, username string, disabled bool) (bool, RequestError) {
-//	if username == "" {
-//		return false, RequestError{StatusCode: http.StatusNotAcceptable, Err: ErrUsernameRequired}
-//	}
-//
-//	respBody, statusCode, err := c.Post(ctx, "PATCH", "/subusers/"+username, SubUser{
-//		Disabled: disabled,
-//	})
-//	if err != nil {
-//		return false, RequestError{
-//			StatusCode: statusCode,
-//			Err:        fmt.Errorf("failed updating user: %w", err),
-//		}
-//	}
-//
-//	var body subUserErrors
-//	if err = json.Unmarshal([]byte(respBody), &body); err != nil {
-//		return false, RequestError{
-//			StatusCode: http.StatusInternalServerError,
-//			Err:        fmt.Errorf("failed updating user: %w", err),
-//		}
-//	}
-//
-//	return len(body.Errors) == 0, RequestError{StatusCode: http.StatusOK, Err: nil}
-//}
+func (c *Client) UpdateUser(ctx context.Context, email string, scopes []string, isAdmin bool) (*User, error) {
+	respBody, _, err := c.Post(ctx, "PATCH", "/teammates/"+email, User{
+		Email:   email,
+		IsAdmin: isAdmin,
+		Scopes:  scopes,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return parseUser(respBody)
+}
+
+func (c *Client) DeleteUser(ctx context.Context, email string) (bool, error) {
+
+	if _, statusCode, err := c.Get(ctx, "DELETE", "/teammates/"+email); statusCode > 299 || err != nil {
+		return false, fmt.Errorf("failed deleting user: %w", err)
+	}
+
+	return true, nil
+}

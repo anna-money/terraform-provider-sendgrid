@@ -91,6 +91,7 @@ func Provider() *schema.Provider {
 			"sendgrid_link_branding":         resourceSendgridLinkBranding(),
 			"sendgrid_sso_integration":       resourceSendgridSSOIntegration(),
 			"sendgrid_sso_certificate":       resourceSendgridSSOCertificate(),
+			"sendgrid_teammate":              resourceSendgridTeammate(),
 		},
 
 		ConfigureContextFunc: providerConfigure,

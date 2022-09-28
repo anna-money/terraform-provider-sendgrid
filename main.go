@@ -28,4 +28,6 @@ func main() {
 
 		return
 	}
+
+	plugin.Serve(opts)
 }
