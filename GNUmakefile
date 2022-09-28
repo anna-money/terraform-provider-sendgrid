@@ -1,4 +1,4 @@
-TEST?=$$(go list ./... | grep -v /sdk$$) 
+TEST?=$$(go list ./... | grep -v /sdk$$)
 GOFMT_FILES?=$$(find . -name '*.go')
 PGK_NAME=sendgrid
 
@@ -9,7 +9,7 @@ build: fmtcheck
 	$(MAKE) --directory=scripts doc
 
 test: fmtcheck
-	@go test $(TEST) $(TESTARGS) -timeout=30s -parallel=4                    
+	@go test $(TEST) $(TESTARGS) -timeout=30s -parallel=4
 
 testacc: fmtcheck
 	TF_ACC=1 go test ./$(PKG_NAME) -v $(TESTARGS) -timeout 1m
@@ -35,6 +35,9 @@ sweep:
 
 test-release:
 	goreleaser --snapshot --skip-publish --rm-dist
+
+doc:
+	tfplugindocs generate --rendered-provider-name 'SendGrid provider' --provider-name anna-money/sendgrid
 
 release:
 	goreleaser release --rm-dist
