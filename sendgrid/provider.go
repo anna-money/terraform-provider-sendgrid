@@ -92,6 +92,7 @@ func Provider() *schema.Provider {
 			"sendgrid_sso_integration":       resourceSendgridSSOIntegration(),
 			"sendgrid_sso_certificate":       resourceSendgridSSOCertificate(),
 			"sendgrid_teammate":              resourceSendgridTeammate(),
+			"sendgrid_teammate_sso":          resourceSendgridTeammateSSO(),
 		},
 
 		ConfigureContextFunc: providerConfigure,

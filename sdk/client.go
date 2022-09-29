@@ -147,8 +147,8 @@ func (c *Client) Get(ctx context.Context, method rest.Method, endpoint string) (
 	req.Method = method
 
 	resp, err := sendgrid.API(req)
-	if err != nil {
-		return "", resp.StatusCode, fmt.Errorf("failed getting resource: %w", err)
+	if err != nil || resp.StatusCode >= 400 {
+		return "", resp.StatusCode, fmt.Errorf("api response: HTTP %d: %s, err: %v", resp.StatusCode, resp.Body, err)
 	}
 
 	return resp.Body, resp.StatusCode, nil
@@ -177,8 +177,12 @@ func (c *Client) Post(ctx context.Context, method rest.Method, endpoint string, 
 	}
 
 	resp, err := sendgrid.API(req)
+
+	if resp.StatusCode >= 400 {
+		return "", resp.StatusCode, fmt.Errorf("api response: HTTP %d: %s", resp.StatusCode, resp.Body)
+	}
 	if err != nil {
-		return "", resp.StatusCode, fmt.Errorf("failed posting resource: %w", err)
+		return "", resp.StatusCode, fmt.Errorf("api send post error: %v", err)
 	}
 
 	return resp.Body, resp.StatusCode, nil

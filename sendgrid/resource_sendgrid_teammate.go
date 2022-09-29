@@ -48,7 +48,7 @@ func resourceSendgridTeammate() *schema.Resource {
 			"scopes": {
 				Type:        schema.TypeSet,
 				Description: "Permission scopes, will ignored if parameter is_admin = true.",
-				Required:    true,
+				Optional:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
@@ -74,6 +74,7 @@ func resourceSendgridTeammateCreate(ctx context.Context, d *schema.ResourceData,
 		return diag.FromErr(err)
 	}
 	d.SetId(user.Email)
+	d.Set("email", user.Email)
 
 	return nil
 }

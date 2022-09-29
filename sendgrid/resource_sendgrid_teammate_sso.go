@@ -41,8 +41,23 @@ func resourceSendgridTeammateSSO() *schema.Resource {
 				Type:        schema.TypeString,
 				Description: "The email of the user.",
 				Required:    true,
+			}, "first_name": {
+				Type:        schema.TypeString,
+				Description: "The email of the user.",
+				Required:    true,
+			},
+			"last_name": {
+				Type:        schema.TypeString,
+				Description: "The email of the user.",
+				Required:    true,
 			},
 			"is_admin": {
+				Type:        schema.TypeBool,
+				Description: "Invited user should be admin?.",
+				Required:    true,
+				Elem:        &schema.Schema{Type: schema.TypeBool},
+			},
+			"is_read_only": {
 				Type:        schema.TypeBool,
 				Description: "Invited user should be admin?.",
 				Required:    true,
@@ -51,7 +66,7 @@ func resourceSendgridTeammateSSO() *schema.Resource {
 			"scopes": {
 				Type:        schema.TypeSet,
 				Description: "Permission scopes, will ignored if parameter is_admin = true.",
-				Required:    true,
+				Optional:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},

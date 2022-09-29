@@ -56,6 +56,7 @@ func (c *Client) CreateTemplate(ctx context.Context, name, generation string) (*
 		Name:       name,
 		Generation: generation,
 	})
+	fmt.Printf("ERROR from tmpl: %v", err)
 	if err != nil {
 		return nil, fmt.Errorf("failed creating template: %w", err)
 	}
