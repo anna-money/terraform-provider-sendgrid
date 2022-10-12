@@ -17,7 +17,9 @@ package sendgrid
 
 import (
 	"context"
+
 	sendgrid "github.com/anna-money/terraform-provider-sendgrid/sdk"
+	"github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -39,17 +41,44 @@ func resourceSendgridTeammate() *schema.Resource {
 				Description: "The email of the user.",
 				Required:    true,
 			},
+			"first_name": {
+				Type:        schema.TypeString,
+				Description: "The first nameof the user.",
+				Optional:    true,
+			},
+			"last_name": {
+				Type:        schema.TypeString,
+				Description: "The last name of the user.",
+				Optional:    true,
+			},
+			"user_type": {
+				Type:        schema.TypeString,
+				Description: "Type of the user.",
+				Optional:    true,
+			},
 			"is_admin": {
 				Type:        schema.TypeBool,
 				Description: "Invited user should be admin?.",
 				Required:    true,
-				Elem:        &schema.Schema{Type: schema.TypeBool},
+				Elem: &schema.Schema{
+					Type: schema.TypeBool,
+				},
 			},
 			"scopes": {
-				Type:        schema.TypeSet,
+				Type:        schema.TypeList,
 				Description: "Permission scopes, will ignored if parameter is_admin = true.",
 				Optional:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString},
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+			},
+			"username": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Username.",
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
 			},
 		},
 	}
@@ -79,26 +108,32 @@ func resourceSendgridTeammateCreate(ctx context.Context, d *schema.ResourceData,
 	return nil
 }
 
-func resourceSendgridTeammateRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	c := m.(*sendgrid.Client)
+func resourceSendgridTeammateRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*sendgrid.Client)
 
 	var diags diag.Diagnostics
-	userEmail := d.Id()
+	email := d.Id()
 
-	u, err := c.ReadUser(ctx, userEmail)
+	teammate, err := client.ReadUser(ctx, email)
 	if err != nil {
 		return append(diags, diag.FromErr(err)...)
 	}
-	if u == nil {
-		d.SetId("")
-	} else {
-		d.Set("email", u.Email)
-	}
-	return diags
+
+	d.SetId(teammate.Email)
+	retErr := multierror.Append(
+		d.Set("email", teammate.Email),
+		d.Set("username", teammate.Username),
+		d.Set("user_type", teammate.UserType),
+		d.Set("first_name", teammate.FirstName),
+		d.Set("last_name", teammate.LastName),
+		d.Set("scopes", teammate.Scopes),
+		d.Set("is_admin", teammate.IsAdmin),
+	)
+	return diag.FromErr(retErr.ErrorOrNil())
 }
 
-func resourceSendgridTeammateUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	c := m.(*sendgrid.Client)
+func resourceSendgridTeammateUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*sendgrid.Client)
 
 	scopesSet := d.Get("scopes").(*schema.Set).List()
 	scopes := make([]string, 0)
@@ -107,19 +142,20 @@ func resourceSendgridTeammateUpdate(ctx context.Context, d *schema.ResourceData,
 		scopes = append(scopes, scope.(string))
 	}
 
-	_, err := c.UpdateUser(ctx, d.Get("email").(string), scopes, d.Get("is_admin").(bool))
+	_, err := client.UpdateUser(ctx, d.Get("email").(string), scopes, d.Get("is_admin").(bool))
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	return resourceSendgridTeammateRead(ctx, d, m)
+	return resourceSendgridTeammateRead(ctx, d, meta)
 }
 
-func resourceSendgridTeammateDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	c := m.(*sendgrid.Client)
+func resourceSendgridTeammateDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*sendgrid.Client)
+
 	var diags diag.Diagnostics
 	userEmail := d.Id()
-	_, err := c.DeleteUser(ctx, userEmail)
+	_, err := client.DeleteUser(ctx, userEmail)
 
 	if err != nil {
 		return append(diags, diag.FromErr(err)...)
