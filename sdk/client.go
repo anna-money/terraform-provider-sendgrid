@@ -3,7 +3,6 @@ package sendgrid
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -17,8 +16,6 @@ const (
 	defaultBaseURL = "https://api.sendgrid.com/v3/"
 )
 
-var errNonNilContext = errors.New("context must be non-nil")
-
 // Client is a Sendgrid client.
 type Client struct {
 	client    *http.Client
@@ -28,52 +25,6 @@ type Client struct {
 	apiKey     string
 	host       string
 	OnBehalfOf string
-}
-
-type ErrorResponse struct {
-	Response *http.Response
-	Detail   string `json:"detail"`
-}
-
-func (r *ErrorResponse) Error() string {
-	return fmt.Sprintf(
-		"%v %v: %d %v",
-		r.Response.Request.Method, r.Response.Request.URL,
-		r.Response.StatusCode, r.Detail)
-}
-
-func (r *ErrorResponse) Is(target error) bool {
-	v, ok := target.(*ErrorResponse)
-	if !ok {
-		return false
-	}
-	if r.Detail != v.Detail ||
-		!matchHTTPResponse(r.Response, v.Response) {
-		return false
-	}
-	return true
-}
-
-type RateLimitError struct {
-	Rate     Rate
-	Response *http.Response
-	Detail   string
-}
-
-func (r *RateLimitError) Error() string {
-	return fmt.Sprintf(
-		"%v %v: %d %v %v",
-		r.Response.Request.Method, r.Response.Request.URL,
-		r.Response.StatusCode, r.Detail, fmt.Sprintf("[rate reset in %v]", time.Until(r.Rate.Reset)))
-}
-func (r *RateLimitError) Is(target error) bool {
-	v, ok := target.(*RateLimitError)
-	if !ok {
-		return false
-	}
-	return r.Rate == v.Rate &&
-		r.Detail == v.Detail &&
-		matchHTTPResponse(r.Response, v.Response)
 }
 
 // matchHTTPResponse compares two http.Response objects. Currently, only StatusCode is checked.

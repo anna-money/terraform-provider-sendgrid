@@ -89,13 +89,15 @@ func resourceSendgridTeammateCreate(ctx context.Context, d *schema.ResourceData,
 
 	email := d.Get("email").(string)
 	is_admin := d.Get("is_admin").(bool)
-	scopesSet := d.Get("scopes").(*schema.Set).List()
 	scopes := make([]string, 0)
+	if is_admin != true {
+		scopes_set := d.Get("scopes").(*schema.Set).List()
+		scopes := make([]string, 0)
 
-	for _, scope := range scopesSet {
-		scopes = append(scopes, scope.(string))
+		for _, scope := range scopes_set {
+			scopes = append(scopes, scope.(string))
+		}
 	}
-
 	tflog.Debug(ctx, "Creating teammate", map[string]interface{}{"email": email, "is_admin": is_admin, "scopes": scopes})
 
 	user, err := client.CreateUser(ctx, email, scopes, is_admin)
@@ -135,10 +137,10 @@ func resourceSendgridTeammateRead(ctx context.Context, d *schema.ResourceData, m
 func resourceSendgridTeammateUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*sendgrid.Client)
 
-	scopesSet := d.Get("scopes").(*schema.Set).List()
+	scopes_set := d.Get("scopes").(*schema.Set).List()
 	scopes := make([]string, 0)
 
-	for _, scope := range scopesSet {
+	for _, scope := range scopes_set {
 		scopes = append(scopes, scope.(string))
 	}
 

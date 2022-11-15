@@ -7,23 +7,6 @@ import (
 	"fmt"
 )
 
-var (
-	UserName string
-)
-
-type Users struct {
-	Result []struct {
-		Email     string   `json:"email,omitempty"`
-		Username  string   `json:"username,omitempty"`
-		FirstName string   `json:"first_name,omitempty"`
-		LastName  string   `json:"last_name,omitempty"`
-		IsAdmin   bool     `json:"is_admin,omitempty"`
-		IsSso     bool     `json:"is_sso,omitempty"`
-		UserType  string   `json:"user_type,omitempty"`
-		Scopes    []string `json:"scopes,omitempty"`
-	} `json:"result"`
-}
-
 type User struct {
 	Username  string   `json:"username,omitempty"`
 	Email     string   `json:"email,omitempty"`
@@ -42,6 +25,21 @@ type User struct {
 	IsSSO     bool     `json:"is_sso,omitempty"`
 	UserType  string   `json:"user_type,omitempty"`
 	Scopes    []string `json:"scopes,omitempty"`
+}
+
+type Users struct {
+	Result []User `json:"result"`
+}
+
+type PendingUser struct {
+	Result []struct {
+		Token          string   `json:"token,omitempty"`
+		Email          string   `json:"email,omitempty"`
+		IsAdmin        bool     `json:"is_admin,omitempty"`
+		IsReadOnly     bool     `json:"is_read_only,omitempty"`
+		ExpirationDate int      `json:"expiration_date,omitempty"`
+		Scopes         []string `json:"scopes,omitempty"`
+	} `json:"result"`
 }
 
 func parseUser(respBody string) (*User, error) {
@@ -68,9 +66,9 @@ func (c *Client) GetUsernameByEmail(ctx context.Context, email string) (string, 
 		return "", err
 	}
 
-	for _, u := range users.Result {
-		if u.Email == email && u.Username != "" {
-			return u.Username, nil
+	for _, user := range users.Result {
+		if user.Email == email && user.Username != "" {
+			return user.Username, nil
 		}
 	}
 	return "", fmt.Errorf("username with email %s not found", email)
@@ -131,6 +129,12 @@ func (c *Client) UpdateUser(ctx context.Context, email string, scopes []string, 
 func (c *Client) DeleteUser(ctx context.Context, email string) (bool, error) {
 	username, err := c.GetUsernameByEmail(ctx, email)
 	if err != nil {
+		tokenInvite, err := c.GetPendingUserToken(ctx, email)
+		fmt.Println(tokenInvite)
+		fmt.Println("tokenInvite111123123123")
+		if _, statusCode, err := c.Get(ctx, "DELETE", "/teammates/pending/"+tokenInvite); statusCode > 299 || err != nil {
+			return false, fmt.Errorf("failed deleting user: %w", err)
+		}
 		return false, err
 	}
 
@@ -139,4 +143,25 @@ func (c *Client) DeleteUser(ctx context.Context, email string) (bool, error) {
 	}
 
 	return true, nil
+}
+
+func (c *Client) GetPendingUserToken(ctx context.Context, email string) (string, error) {
+	respBody, _, err := c.Get(ctx, "GET", "/teammates/pending")
+	if err != nil {
+		return "", err
+	}
+
+	pendingUsers := &PendingUser{}
+	decoder := json.NewDecoder(bytes.NewReader([]byte(respBody)))
+	err = decoder.Decode(pendingUsers)
+	if err != nil {
+		return "", err
+	}
+
+	for _, user := range pendingUsers.Result {
+		if user.Email == email {
+			return user.Token, nil
+		}
+	}
+	return "", fmt.Errorf("pending user with email %s not found", email)
 }
