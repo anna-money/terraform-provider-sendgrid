@@ -59,14 +59,15 @@ func (c *Client) GetUsernameByEmail(ctx context.Context, email string) (string, 
 		return "", err
 	}
 
-	users := &Users{}
+	users := []User{}
+
 	decoder := json.NewDecoder(bytes.NewReader([]byte(respBody)))
-	err = decoder.Decode(users)
+	err = decoder.Decode(&users)
 	if err != nil {
 		return "", err
 	}
 
-	for _, user := range users.Result {
+	for _, user := range users {
 		if user.Email == email && user.Username != "" {
 			return user.Username, nil
 		}
