@@ -6,7 +6,7 @@ import (
 	"log"
 
 	"github.com/anna-money/terraform-provider-sendgrid/sendgrid"
-	"github.com/hashicorp/terraform-plugin-sdk/plugin"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
 )
 
 // Generate the Terraform provider documentation using `tfplugindocs`:

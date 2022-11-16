@@ -88,9 +88,9 @@ func resourceSendgridTeammateCreate(ctx context.Context, d *schema.ResourceData,
 	client := meta.(*sendgrid.Client)
 
 	email := d.Get("email").(string)
-	is_admin := d.Get("is_admin").(bool)
+	isAdmin := d.Get("is_admin").(bool)
 	scopes := make([]string, 0)
-	if is_admin != true {
+	if isAdmin != true {
 		scopes_set := d.Get("scopes").(*schema.Set).List()
 		scopes := make([]string, 0)
 
@@ -98,9 +98,9 @@ func resourceSendgridTeammateCreate(ctx context.Context, d *schema.ResourceData,
 			scopes = append(scopes, scope.(string))
 		}
 	}
-	tflog.Debug(ctx, "Creating teammate", map[string]interface{}{"email": email, "is_admin": is_admin, "scopes": scopes})
+	tflog.Debug(ctx, "Creating teammate", map[string]interface{}{"email": email, "is_admin": isAdmin, "scopes": scopes})
 
-	user, err := client.CreateUser(ctx, email, scopes, is_admin)
+	user, err := client.CreateUser(ctx, email, scopes, isAdmin)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -137,10 +137,10 @@ func resourceSendgridTeammateRead(ctx context.Context, d *schema.ResourceData, m
 func resourceSendgridTeammateUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*sendgrid.Client)
 
-	scopes_set := d.Get("scopes").(*schema.Set).List()
+	scopesSet := d.Get("scopes").(*schema.Set).List()
 	scopes := make([]string, 0)
 
-	for _, scope := range scopes_set {
+	for _, scope := range scopesSet {
 		scopes = append(scopes, scope.(string))
 	}
 
