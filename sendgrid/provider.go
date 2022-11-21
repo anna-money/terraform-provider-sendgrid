@@ -77,6 +77,7 @@ func Provider() *schema.Provider {
 			"sendgrid_template":          dataSendgridTemplate(),
 			"sendgrid_template_version":  dataSendgridTemplateVersion(),
 			"sendgrid_unsubscribe_group": dataSendgridUnsubscribeGroup(),
+			"sendgrid_teammate":          dataSendgridTeammate(),
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
@@ -91,6 +92,7 @@ func Provider() *schema.Provider {
 			"sendgrid_link_branding":         resourceSendgridLinkBranding(),
 			"sendgrid_sso_integration":       resourceSendgridSSOIntegration(),
 			"sendgrid_sso_certificate":       resourceSendgridSSOCertificate(),
+			"sendgrid_teammate":              resourceSendgridTeammate(),
 		},
 
 		ConfigureContextFunc: providerConfigure,

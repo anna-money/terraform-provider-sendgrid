@@ -2,6 +2,7 @@ package sendgrid
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -110,6 +111,10 @@ var (
 	ErrFailedUpdatingSSOCertificate = errors.New("failed to update SSO certificate")
 )
 
+type APIError struct {
+	f interface{} // unknown
+}
+
 // RequestError struct permits to embed to return the statucode and the error to the parent function.
 type RequestError struct {
 	StatusCode int
@@ -151,4 +156,38 @@ func RetryOnRateLimit(
 	}
 
 	return resp, nil
+}
+
+func (e *APIError) UnmarshalJSON(b []byte) error {
+	if err := json.Unmarshal(b, &e.f); err != nil {
+		e.f = string(b)
+	}
+	return nil
+}
+
+func (e *APIError) MarshalJSON() ([]byte, error) {
+	return json.Marshal(e.f)
+}
+
+func (e APIError) Detail() string {
+	switch v := e.f.(type) {
+	case map[string]interface{}:
+		if len(v) == 1 {
+			if detail, ok := v["detail"].(string); ok {
+				return detail
+			}
+		}
+		return fmt.Sprintf("%v", v)
+	default:
+		return fmt.Sprintf("%v", v)
+	}
+}
+
+func (e APIError) Error() string {
+	return fmt.Sprintf("sendgrid: %s", e.Detail())
+}
+
+// Empty returns true if empty.
+func (e APIError) Empty() bool {
+	return e.f == nil
 }

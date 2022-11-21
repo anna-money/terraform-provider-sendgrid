@@ -4,22 +4,66 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/url"
+	"time"
 
 	"github.com/sendgrid/rest"
 	"github.com/sendgrid/sendgrid-go"
 )
 
+const (
+	defaultBaseURL = "https://api.sendgrid.com/v3/"
+)
+
 // Client is a Sendgrid client.
 type Client struct {
+	client    *http.Client
+	BaseURL   *url.URL
+	UserAgent string
+
 	apiKey     string
 	host       string
 	OnBehalfOf string
 }
 
+// matchHTTPResponse compares two http.Response objects. Currently, only StatusCode is checked.
+func matchHTTPResponse(r1, r2 *http.Response) bool {
+	if r1 == nil && r2 == nil {
+		return true
+	}
+	if r1 != nil && r2 != nil {
+		return r1.StatusCode == r2.StatusCode
+	}
+	return false
+}
+
+type Response struct {
+	*http.Response
+
+	// For APIs that support cursor pagination, the following field will be populated
+	// to point to the next page if more results are available.
+	// Set ListCursorParams.Cursor to this value when calling the endpoint again.
+	Cursor string
+
+	Rate Rate
+}
+
+type Rate struct {
+	// The maximum number of requests allowed within the window.
+	Limit int
+
+	// The number of requests this caller has left on this endpoint within the current window
+	Remaining int
+
+	// The time when the next rate limit window begins and the count resets, measured in UTC seconds from epoch
+	Reset time.Time
+}
+
 // NewClient creates a Sendgrid Client.
 func NewClient(apiKey, host, onBehalfOf string) *Client {
 	if host == "" {
-		host = "https://api.sendgrid.com/v3"
+		host = defaultBaseURL
 	}
 
 	return &Client{
@@ -54,8 +98,8 @@ func (c *Client) Get(ctx context.Context, method rest.Method, endpoint string) (
 	req.Method = method
 
 	resp, err := sendgrid.API(req)
-	if err != nil {
-		return "", resp.StatusCode, fmt.Errorf("failed getting resource: %w", err)
+	if err != nil || resp.StatusCode >= 400 {
+		return "", resp.StatusCode, fmt.Errorf("api response: HTTP %d: %s, err: %v", resp.StatusCode, resp.Body, err)
 	}
 
 	return resp.Body, resp.StatusCode, nil
@@ -84,8 +128,12 @@ func (c *Client) Post(ctx context.Context, method rest.Method, endpoint string, 
 	}
 
 	resp, err := sendgrid.API(req)
+
+	if resp.StatusCode >= 400 {
+		return "", resp.StatusCode, fmt.Errorf("api response: HTTP %d: %s", resp.StatusCode, resp.Body)
+	}
 	if err != nil {
-		return "", resp.StatusCode, fmt.Errorf("failed posting resource: %w", err)
+		return "", resp.StatusCode, fmt.Errorf("api send post error: %v", err)
 	}
 
 	return resp.Body, resp.StatusCode, nil
