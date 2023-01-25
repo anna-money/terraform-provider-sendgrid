@@ -54,7 +54,7 @@ func parseUser(respBody string) (*User, error) {
 }
 
 func (c *Client) GetUsernameByEmail(ctx context.Context, email string) (string, error) {
-	respBody, _, err := c.Get(ctx, "GET", "/teammates")
+	respBody, _, err := c.Get(ctx, "GET", "/teammates?limit=10000")
 	if err != nil {
 		return "", err
 	}
