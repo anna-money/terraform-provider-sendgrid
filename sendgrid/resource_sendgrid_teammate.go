@@ -65,7 +65,7 @@ func resourceSendgridTeammate() *schema.Resource {
 				},
 			},
 			"scopes": {
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Description: "Permission scopes, will ignored if parameter is_admin = true.",
 				Optional:    true,
 				Elem: &schema.Schema{
@@ -89,11 +89,9 @@ func resourceSendgridTeammateCreate(ctx context.Context, d *schema.ResourceData,
 
 	email := d.Get("email").(string)
 	isAdmin := d.Get("is_admin").(bool)
-	scopes := make([]string, 0)
-	if isAdmin != true {
-		scopes_set := d.Get("scopes").(*schema.Set).List()
-		scopes := make([]string, 0)
-
+	scopes_set := d.Get("scopes").(*schema.Set).List()
+	scopes := make([]string, len(scopes_set))
+	if !isAdmin {
 		for _, scope := range scopes_set {
 			scopes = append(scopes, scope.(string))
 		}
