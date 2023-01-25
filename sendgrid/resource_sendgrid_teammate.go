@@ -51,11 +51,6 @@ func resourceSendgridTeammate() *schema.Resource {
 				Description: "The last name of the user.",
 				Optional:    true,
 			},
-			"user_type": {
-				Type:        schema.TypeString,
-				Description: "Type of the user.",
-				Optional:    true,
-			},
 			"is_admin": {
 				Type:        schema.TypeBool,
 				Description: "Invited user should be admin?.",
@@ -123,7 +118,6 @@ func resourceSendgridTeammateRead(ctx context.Context, d *schema.ResourceData, m
 	retErr := multierror.Append(
 		d.Set("email", teammate.Email),
 		d.Set("username", teammate.Username),
-		d.Set("user_type", teammate.UserType),
 		d.Set("first_name", teammate.FirstName),
 		d.Set("last_name", teammate.LastName),
 		d.Set("scopes", teammate.Scopes),
