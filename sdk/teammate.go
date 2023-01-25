@@ -131,8 +131,6 @@ func (c *Client) DeleteUser(ctx context.Context, email string) (bool, error) {
 	username, err := c.GetUsernameByEmail(ctx, email)
 	if err != nil {
 		tokenInvite, err := c.GetPendingUserToken(ctx, email)
-		fmt.Println(tokenInvite)
-		fmt.Println("tokenInvite111123123123")
 		if _, statusCode, err := c.Get(ctx, "DELETE", "/teammates/pending/"+tokenInvite); statusCode > 299 || err != nil {
 			return false, fmt.Errorf("failed deleting user: %w", err)
 		}
