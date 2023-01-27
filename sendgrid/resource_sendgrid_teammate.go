@@ -53,7 +53,15 @@ func resourceSendgridTeammate() *schema.Resource {
 			},
 			"is_admin": {
 				Type:        schema.TypeBool,
-				Description: "Invited user should be admin?.",
+				Description: "Invited user should be admin?",
+				Required:    true,
+				Elem: &schema.Schema{
+					Type: schema.TypeBool,
+				},
+			},
+			"is_sso": {
+				Type:        schema.TypeBool,
+				Description: "Single Sign-On user?",
 				Required:    true,
 				Elem: &schema.Schema{
 					Type: schema.TypeBool,
@@ -81,19 +89,29 @@ func resourceSendgridTeammate() *schema.Resource {
 
 func resourceSendgridTeammateCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*sendgrid.Client)
-
 	email := d.Get("email").(string)
 	isAdmin := d.Get("is_admin").(bool)
-	scopes_set := d.Get("scopes").(*schema.Set).List()
-	scopes := make([]string, len(scopes_set))
+	isSSO := d.Get("is_sso").(bool)
+	firstName := d.Get("first_name").(string)
+	lastName := d.Get("last_name").(string)
+
+	scopesSet := d.Get("scopes").(*schema.Set).List()
+	var scopes []string
 	if !isAdmin {
-		for _, scope := range scopes_set {
+		for _, scope := range scopesSet {
 			scopes = append(scopes, scope.(string))
 		}
 	}
-	tflog.Debug(ctx, "Creating teammate", map[string]interface{}{"email": email, "is_admin": isAdmin, "scopes": scopes})
+	tflog.Debug(ctx, "Creating teammate", map[string]interface{}{"first_name": firstName, "last_name": lastName,
+		"email": email, "is_admin": isAdmin, "scopes": scopes})
 
-	user, err := client.CreateUser(ctx, email, scopes, isAdmin)
+	var user *sendgrid.User
+	var err error
+	if isSSO {
+		user, err = client.CreateSSOUser(ctx, firstName, lastName, email, scopes, isAdmin)
+	} else {
+		user, err = client.CreateUser(ctx, email, scopes, isAdmin)
+	}
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -114,13 +132,26 @@ func resourceSendgridTeammateRead(ctx context.Context, d *schema.ResourceData, m
 		return append(diags, diag.FromErr(err)...)
 	}
 
+	// There is no need to track admin scopes since they have full access.
+	if teammate.IsAdmin {
+		teammate.Scopes = nil
+	}
+
+	var filteredScopes []string
+	for _, s := range teammate.Scopes {
+		// Sendgrid sets these scopes automatically. If you try to set them, you will get a 400 error.
+		if s != "2fa_exempt" && s != "2fa_required" {
+			filteredScopes = append(filteredScopes, s)
+		}
+	}
+
 	d.SetId(teammate.Email)
 	retErr := multierror.Append(
 		d.Set("email", teammate.Email),
 		d.Set("username", teammate.Username),
 		d.Set("first_name", teammate.FirstName),
 		d.Set("last_name", teammate.LastName),
-		d.Set("scopes", teammate.Scopes),
+		d.Set("scopes", filteredScopes),
 		d.Set("is_admin", teammate.IsAdmin),
 	)
 	return diag.FromErr(retErr.ErrorOrNil())
@@ -128,15 +159,27 @@ func resourceSendgridTeammateRead(ctx context.Context, d *schema.ResourceData, m
 
 func resourceSendgridTeammateUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*sendgrid.Client)
+	email := d.Get("email").(string)
+	isAdmin := d.Get("is_admin").(bool)
+	isSSO := d.Get("is_sso").(bool)
+	firstName := d.Get("first_name").(string)
+	lastName := d.Get("last_name").(string)
 
 	scopesSet := d.Get("scopes").(*schema.Set).List()
-	scopes := make([]string, 0)
-
-	for _, scope := range scopesSet {
-		scopes = append(scopes, scope.(string))
+	var scopes []string
+	if !isAdmin {
+		for _, scope := range scopesSet {
+			scopes = append(scopes, scope.(string))
+		}
 	}
 
-	_, err := client.UpdateUser(ctx, d.Get("email").(string), scopes, d.Get("is_admin").(bool))
+	var err error
+	if isSSO {
+		_, err = client.UpdateSSOUser(ctx, firstName, lastName, email, scopes, isAdmin)
+	} else {
+		_, err = client.UpdateUser(ctx, email, scopes, isAdmin)
+	}
+
 	if err != nil {
 		return diag.FromErr(err)
 	}

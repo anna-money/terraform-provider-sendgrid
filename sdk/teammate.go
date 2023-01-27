@@ -89,6 +89,22 @@ func (c *Client) CreateUser(ctx context.Context, email string, scopes []string, 
 	return parseUser(respBody)
 }
 
+func (c *Client) CreateSSOUser(ctx context.Context, firstName, lastName, email string, scopes []string, isAdmin bool) (*User, error) {
+	respBody, _, err := c.Post(ctx, "POST", "/sso/teammates", User{
+		FirstName: firstName,
+		LastName:  lastName,
+		Email:     email,
+		IsAdmin:   isAdmin,
+		Scopes:    scopes,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return parseUser(respBody)
+}
+
 func (c *Client) ReadUser(ctx context.Context, email string) (*User, error) {
 	username, err := c.GetUsernameByEmail(ctx, email)
 	if err != nil {
@@ -115,9 +131,28 @@ func (c *Client) UpdateUser(ctx context.Context, email string, scopes []string, 
 	}
 
 	respBody, _, err := c.Post(ctx, "PATCH", "/teammates/"+username, User{
-		Email:   email,
 		IsAdmin: isAdmin,
 		Scopes:  scopes,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return parseUser(respBody)
+}
+
+func (c *Client) UpdateSSOUser(ctx context.Context, firstName, lastName, email string, scopes []string, isAdmin bool) (*User, error) {
+	username, err := c.GetUsernameByEmail(ctx, email)
+	if err != nil {
+		return nil, err
+	}
+
+	respBody, _, err := c.Post(ctx, "PATCH", "/sso/teammates/"+username, User{
+		FirstName: firstName,
+		LastName:  lastName,
+		IsAdmin:   isAdmin,
+		Scopes:    scopes,
 	})
 
 	if err != nil {
