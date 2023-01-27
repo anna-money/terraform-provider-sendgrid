@@ -117,8 +117,11 @@ func resourceSendgridTeammateCreate(ctx context.Context, d *schema.ResourceData,
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	d.SetId(user.Email)
-	d.Set("email", user.Email)
+	if err := d.Set("email", user.Email); err != nil {
+		return diag.FromErr(err)
+	}
 
 	return nil
 }
