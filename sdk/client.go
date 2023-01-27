@@ -18,24 +18,12 @@ const (
 
 // Client is a Sendgrid client.
 type Client struct {
-	client    *http.Client
 	BaseURL   *url.URL
 	UserAgent string
 
 	apiKey     string
 	host       string
 	OnBehalfOf string
-}
-
-// matchHTTPResponse compares two http.Response objects. Currently, only StatusCode is checked.
-func matchHTTPResponse(r1, r2 *http.Response) bool {
-	if r1 == nil && r2 == nil {
-		return true
-	}
-	if r1 != nil && r2 != nil {
-		return r1.StatusCode == r2.StatusCode
-	}
-	return false
 }
 
 type Response struct {
