@@ -81,7 +81,6 @@ func (c *Client) CreateUser(ctx context.Context, email string, scopes []string, 
 		IsAdmin: isAdmin,
 		Scopes:  scopes,
 	})
-
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +96,6 @@ func (c *Client) CreateSSOUser(ctx context.Context, firstName, lastName, email s
 		IsAdmin:   isAdmin,
 		Scopes:    scopes,
 	})
-
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +132,6 @@ func (c *Client) UpdateUser(ctx context.Context, email string, scopes []string, 
 		IsAdmin: isAdmin,
 		Scopes:  scopes,
 	})
-
 	if err != nil {
 		return nil, err
 	}
@@ -154,7 +151,6 @@ func (c *Client) UpdateSSOUser(ctx context.Context, firstName, lastName, email s
 		IsAdmin:   isAdmin,
 		Scopes:    scopes,
 	})
-
 	if err != nil {
 		return nil, err
 	}

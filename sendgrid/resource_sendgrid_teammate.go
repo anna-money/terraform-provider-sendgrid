@@ -102,8 +102,10 @@ func resourceSendgridTeammateCreate(ctx context.Context, d *schema.ResourceData,
 			scopes = append(scopes, scope.(string))
 		}
 	}
-	tflog.Debug(ctx, "Creating teammate", map[string]interface{}{"first_name": firstName, "last_name": lastName,
-		"email": email, "is_admin": isAdmin, "scopes": scopes})
+	tflog.Debug(ctx, "Creating teammate", map[string]interface{}{
+		"first_name": firstName, "last_name": lastName,
+		"email": email, "is_admin": isAdmin, "scopes": scopes,
+	})
 
 	var user *sendgrid.User
 	var err error
@@ -193,7 +195,6 @@ func resourceSendgridTeammateDelete(ctx context.Context, d *schema.ResourceData,
 	var diags diag.Diagnostics
 	userEmail := d.Id()
 	_, err := client.DeleteUser(ctx, userEmail)
-
 	if err != nil {
 		return append(diags, diag.FromErr(err)...)
 	}
