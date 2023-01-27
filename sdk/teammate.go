@@ -81,7 +81,21 @@ func (c *Client) CreateUser(ctx context.Context, email string, scopes []string, 
 		IsAdmin: isAdmin,
 		Scopes:  scopes,
 	})
+	if err != nil {
+		return nil, err
+	}
 
+	return parseUser(respBody)
+}
+
+func (c *Client) CreateSSOUser(ctx context.Context, firstName, lastName, email string, scopes []string, isAdmin bool) (*User, error) {
+	respBody, _, err := c.Post(ctx, "POST", "/sso/teammates", User{
+		FirstName: firstName,
+		LastName:  lastName,
+		Email:     email,
+		IsAdmin:   isAdmin,
+		Scopes:    scopes,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -115,11 +129,28 @@ func (c *Client) UpdateUser(ctx context.Context, email string, scopes []string, 
 	}
 
 	respBody, _, err := c.Post(ctx, "PATCH", "/teammates/"+username, User{
-		Email:   email,
 		IsAdmin: isAdmin,
 		Scopes:  scopes,
 	})
+	if err != nil {
+		return nil, err
+	}
 
+	return parseUser(respBody)
+}
+
+func (c *Client) UpdateSSOUser(ctx context.Context, firstName, lastName, email string, scopes []string, isAdmin bool) (*User, error) {
+	username, err := c.GetUsernameByEmail(ctx, email)
+	if err != nil {
+		return nil, err
+	}
+
+	respBody, _, err := c.Post(ctx, "PATCH", "/sso/teammates/"+username, User{
+		FirstName: firstName,
+		LastName:  lastName,
+		IsAdmin:   isAdmin,
+		Scopes:    scopes,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -131,8 +162,6 @@ func (c *Client) DeleteUser(ctx context.Context, email string) (bool, error) {
 	username, err := c.GetUsernameByEmail(ctx, email)
 	if err != nil {
 		tokenInvite, err := c.GetPendingUserToken(ctx, email)
-		fmt.Println(tokenInvite)
-		fmt.Println("tokenInvite111123123123")
 		if _, statusCode, err := c.Get(ctx, "DELETE", "/teammates/pending/"+tokenInvite); statusCode > 299 || err != nil {
 			return false, fmt.Errorf("failed deleting user: %w", err)
 		}

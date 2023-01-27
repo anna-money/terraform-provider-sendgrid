@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"go/parser"
 	"go/token"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -162,7 +161,7 @@ func genIdx(fpath string) { //nolint:cyclop,funlen
 		}
 	}()
 
-	idxTPL, err := ioutil.ReadFile(indexFile)
+	idxTPL, err := os.ReadFile(indexFile)
 	if err != nil {
 		log.Printf("[FAIL!]open file %s failed: %s", indexFile, err)
 
@@ -313,7 +312,7 @@ func genDoc(dtype, dtypeFolder, fpath, name string, resource *schema.Resource) {
 		}
 	}()
 
-	docTPL, err := ioutil.ReadFile(docFile)
+	docTPL, err := os.ReadFile(docFile)
 	if err != nil {
 		log.Printf("[FAIL!]open file %s failed: %s", docFile, err)
 
