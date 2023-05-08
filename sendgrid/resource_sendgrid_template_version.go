@@ -215,6 +215,12 @@ func resourceSendgridTemplateVersionUpdate(
 		templateVersion.Active = d.Get("active").(int)
 	}
 
+	if templateVersion.Active == 1 {
+		if _, err := c.ActivateTemplateVersion(ctx, templateVersion); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
 	if d.HasChange("name") {
 		templateVersion.Name = d.Get("name").(string)
 	}
