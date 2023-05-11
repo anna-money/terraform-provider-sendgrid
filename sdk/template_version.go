@@ -92,6 +92,24 @@ func (c *Client) UpdateTemplateVersion(ctx context.Context, t TemplateVersion) (
 	return parseTemplateVersion(respBody)
 }
 
+// ActivateTemplateVersion activates a version of a transactional template and returns it.
+func (c *Client) ActivateTemplateVersion(ctx context.Context, t TemplateVersion) (*TemplateVersion, error) {
+	if t.ID == "" {
+		return nil, ErrTemplateVersionIDRequired
+	}
+
+	if t.TemplateID == "" {
+		return nil, ErrTemplateIDRequired
+	}
+
+	respBody, _, err := c.Post(ctx, "POST", "/templates/"+t.TemplateID+"/versions/"+t.ID+"/activate", t)
+	if err != nil {
+		return nil, fmt.Errorf("failed activating template version: %w", err)
+	}
+
+	return parseTemplateVersion(respBody)
+}
+
 // DeleteTemplateVersion deletes a version of a transactional template.
 func (c *Client) DeleteTemplateVersion(ctx context.Context, templateID, id string) (bool, error) {
 	if templateID == "" {
