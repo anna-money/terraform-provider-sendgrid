@@ -1,4 +1,4 @@
-module github.com/anna-money/terraform-provider-sendgrid
+module github.com/octoenergy/terraform-provider-sendgrid
 
 go 1.19
 

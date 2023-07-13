@@ -5,14 +5,16 @@ Provide a resource to manage a subuser.
 ## Example Usage
 
 ```hcl
-resource "sendgrid_subuser" "subuser" {
-	username = "my-subuser"
-	email    = "subuser@example.org"
-	password = "Passw0rd!"
-	ips      = [
-		"127.0.0.1"
-	]
-}
+
+	resource "sendgrid_subuser" "subuser" {
+		username = "my-subuser"
+		email    = "subuser@example.org"
+		password = "Passw0rd!"
+		ips      = [
+			"127.0.0.1"
+		]
+	}
+
 ```
 
 ## Argument Reference

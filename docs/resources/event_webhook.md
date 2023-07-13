@@ -5,24 +5,26 @@ Provide a resource to manage an event webhook settings.
 ## Example Usage
 
 ```hcl
-resource "sendgrid_event_webhook" "default" {
-	enabled = true
-    url = "https://foo.bar/sendgrid/inbound"
-    group_resubscribe = true
-    delivered = true
-    group_unsubscribe = true
-    spam_report = true
-    bounce = true
-    deferred = true
-    unsubscribe = true
-    processed = true
-    open = true
-    click = true
-    dropped = true
-    oauth_client_id = "a-client-id"
-    oauth_client_secret = "a-client-secret"
-    oauth_token_url = "https://oauth.example.com/token"
-}
+
+	resource "sendgrid_event_webhook" "default" {
+		enabled = true
+	    url = "https://foo.bar/sendgrid/inbound"
+	    group_resubscribe = true
+	    delivered = true
+	    group_unsubscribe = true
+	    spam_report = true
+	    bounce = true
+	    deferred = true
+	    unsubscribe = true
+	    processed = true
+	    open = true
+	    click = true
+	    dropped = true
+	    oauth_client_id = "a-client-id"
+	    oauth_client_secret = "a-client-secret"
+	    oauth_token_url = "https://oauth.example.com/token"
+	}
+
 ```
 
 ## Argument Reference

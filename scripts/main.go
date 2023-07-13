@@ -13,8 +13,8 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/anna-money/terraform-provider-sendgrid/sendgrid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/octoenergy/terraform-provider-sendgrid/sendgrid"
 )
 
 const (

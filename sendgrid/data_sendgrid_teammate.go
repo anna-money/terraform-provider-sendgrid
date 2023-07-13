@@ -3,11 +3,11 @@ package sendgrid
 import (
 	"context"
 
-	sendgrid "github.com/anna-money/terraform-provider-sendgrid/sdk"
 	"github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	sendgrid "github.com/octoenergy/terraform-provider-sendgrid/sdk"
 )
 
 func dataSendgridTeammate() *schema.Resource {

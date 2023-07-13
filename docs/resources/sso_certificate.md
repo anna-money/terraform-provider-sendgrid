@@ -5,18 +5,20 @@ Provide a resource to manage SSO certificates.
 ## Example Usage
 
 ```hcl
-resource "sendgrid_sso_integration" "sso" {
-	name    = "IdP"
-	enabled = true
 
-	signin_url  = "https://idp.com/signin"
-	signout_url = "https://idp.com/signout"
-	entity_id   = "https://idp.com/12345"
-}
+	resource "sendgrid_sso_integration" "sso" {
+		name    = "IdP"
+		enabled = true
 
-resource "sendgrid_sso_certificate" "cert" {
-	integration_id = sendgrid_sso_integration.sso.id
-	public_certificate = <<EOF
+		signin_url  = "https://idp.com/signin"
+		signout_url = "https://idp.com/signout"
+		entity_id   = "https://idp.com/12345"
+	}
+
+	resource "sendgrid_sso_certificate" "cert" {
+		integration_id = sendgrid_sso_integration.sso.id
+		public_certificate = <<EOF
+
 -----BEGIN CERTIFICATE-----
 ...
 EOF

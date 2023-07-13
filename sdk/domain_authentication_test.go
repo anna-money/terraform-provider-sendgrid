@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	sendgrid "github.com/anna-money/terraform-provider-sendgrid/sdk"
+	sendgrid "github.com/octoenergy/terraform-provider-sendgrid/sdk"
 )
 
 func Test_parseDomainAuthentication(t *testing.T) { //nolint:funlen

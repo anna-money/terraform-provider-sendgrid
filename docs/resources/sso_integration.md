@@ -8,14 +8,16 @@ workflow once after supplying all required fields including an SSO certificate v
 ## Example Usage
 
 ```hcl
-resource "sendgrid_sso_integration" "sso" {
-	name    = "IdP"
-	enabled = false
 
-	signin_url  = "https://idp.com/signin"
-	signout_url = "https://idp.com/signout"
-	entity_id   = "https://idp.com/12345"
-}
+	resource "sendgrid_sso_integration" "sso" {
+		name    = "IdP"
+		enabled = false
+
+		signin_url  = "https://idp.com/signin"
+		signout_url = "https://idp.com/signout"
+		entity_id   = "https://idp.com/12345"
+	}
+
 ```
 
 ## Argument Reference
