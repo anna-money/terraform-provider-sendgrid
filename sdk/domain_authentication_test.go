@@ -1,7 +1,10 @@
 package sendgrid_test
 
 import (
+	"context"
 	"errors"
+	"net/http"
+	"net/http/httptest"
 	"reflect"
 	"testing"
 
@@ -108,5 +111,73 @@ func Test_parseDomainAuthentication(t *testing.T) { //nolint:funlen
 				t.Errorf("parseDomainAuthentication() got1 = %v, want %v", got1, tt.want1)
 			}
 		})
+	}
+}
+
+var (
+	mux    *http.ServeMux
+	server *httptest.Server
+)
+
+func setup() func() {
+	mux = http.NewServeMux()
+	server = httptest.NewServer(mux)
+	return func() {
+		server.Close()
+	}
+}
+func TestClient_ValidateDomainAuthentication_ShouldNotErrorForOkResponseCode(t *testing.T) {
+	teardown := setup()
+	defer teardown()
+	mux.HandleFunc("/whitelabel/domains/123/validate", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"valid":true}`))
+	})
+	client := sendgrid.NewClient("api-key", server.URL, "on-behalf")
+
+	requestError := client.ValidateDomainAuthentication(context.TODO(), "123")
+
+	if requestError.Err != nil {
+		t.Errorf("ValidateDomainAuthentication() got = %v, want %v", requestError, "error")
+	}
+}
+
+func TestClient_ValidateDomainAuthentication_ShouldErrorForErrorResponseCode(t *testing.T) {
+	teardown := setup()
+	defer teardown()
+	mux.HandleFunc("/whitelabel/domains/123/validate", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte(`{"valid":true}`))
+	})
+	client := sendgrid.NewClient("api-key", server.URL, "on-behalf")
+
+	requestError := client.ValidateDomainAuthentication(context.TODO(), "123")
+
+	if requestError.Err == nil {
+		t.Errorf("ValidateDomainAuthentication() got = %v, want %v", requestError, "error")
+	}
+}
+
+func TestClient_ValidateDomainAuthentication_ShouldErrorForResponseBodySayingValidFalse(t *testing.T) {
+	teardown := setup()
+	defer teardown()
+	mux.HandleFunc("/whitelabel/domains/123/validate", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"valid":false}`))
+	})
+	client := sendgrid.NewClient("api-key", server.URL, "on-behalf")
+
+	requestError := client.ValidateDomainAuthentication(context.Background(), "123")
+
+	if requestError.Err == nil {
+		t.Errorf("ValidateDomainAuthentication() got = %v, want %v", requestError, "error")
+	}
+	errMsg := sendgrid.ErrDomainAuthenticationValidationFailed.Error()
+	if requestError.Err.Error() != errMsg {
+		t.Errorf("ValidateDomainAuthentication() got = %v, want %v", requestError.Err.Error(),
+			errMsg)
 	}
 }

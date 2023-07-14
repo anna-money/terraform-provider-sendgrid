@@ -43,9 +43,6 @@ var (
 	// ErrFailedCreatingSubUser error displayed when the provider can not create a subuser.
 	ErrFailedCreatingSubUser = errors.New("failed creating subUser")
 
-	// ErrFailedDeletingSubUser error displayed when the provider can not delete a subuser.
-	ErrFailedDeletingSubUser = errors.New("failed deleting subUser")
-
 	// ErrTemplateIDRequired error displayed when a template ID wasn't specified.
 	ErrTemplateIDRequired = errors.New("a template ID is required")
 
@@ -82,6 +79,8 @@ var (
 	ErrDomainAuthenticationIDRequired = errors.New("id for domain authentication is required")
 
 	ErrFailedDeletingDomainAuthentication = errors.New("failed deleting domain authentication")
+
+	ErrDomainAuthenticationValidationFailed = errors.New("domain authentication validation failed")
 
 	ErrLinkBrandingIDRequired = errors.New("link branding id is required")
 
