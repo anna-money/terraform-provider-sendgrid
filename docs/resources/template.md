@@ -5,10 +5,12 @@ Provide a resource to manage a template of email.
 ## Example Usage
 
 ```hcl
-resource "sendgrid_template" "template" {
-	name       = "my-template"
-	generation = "dynamic"
-}
+
+	resource "sendgrid_template" "template" {
+		name       = "my-template"
+		generation = "dynamic"
+	}
+
 ```
 
 ## Argument Reference

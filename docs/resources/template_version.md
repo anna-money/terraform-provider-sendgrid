@@ -5,19 +5,21 @@ Provide a resource to manage a version of template.
 ## Example Usage
 
 ```hcl
-resource "sendgrid_template" "template" {
-	name       = "my-template"
-	generation = "dynamic"
-}
 
-resource "sendgrid_template_version" "template_version" {
-	name                   = "my-template-version"
-	template_id            = sendgrid_template.template.id
-	active                 = 1
-	html_content           = "<%body%>"
-	generate_plain_content = true
-	subject                = "subject"
-}
+	resource "sendgrid_template" "template" {
+		name       = "my-template"
+		generation = "dynamic"
+	}
+
+	resource "sendgrid_template_version" "template_version" {
+		name                   = "my-template-version"
+		template_id            = sendgrid_template.template.id
+		active                 = 1
+		html_content           = "<%body%>"
+		generate_plain_content = true
+		subject                = "subject"
+	}
+
 ```
 
 ## Argument Reference

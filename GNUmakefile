@@ -37,7 +37,7 @@ test-release:
 	goreleaser --snapshot --skip-publish --rm-dist
 
 doc:
-	tfplugindocs generate --rendered-provider-name 'SendGrid provider' --provider-name anna-money/sendgrid
+	tfplugindocs generate --rendered-provider-name 'SendGrid provider' --provider-name octoenergy/sendgrid
 
 release:
 	goreleaser release --rm-dist

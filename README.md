@@ -2,7 +2,7 @@
 
 ##  Usage
 
-Detailed documentation is available on the [Terraform provider registry](https://registry.terraform.io/providers/anna-money/sendgrid/latest).
+Detailed documentation is available on the [Terraform provider registry](https://registry.terraform.io/providers/octoenergy/sendgrid/latest).
 
 ## Build
 

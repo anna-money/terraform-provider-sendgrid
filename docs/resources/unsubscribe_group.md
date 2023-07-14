@@ -5,11 +5,13 @@ Provide a resource to manage an unsubscribe group.
 ## Example Usage
 
 ```hcl
-resource "sendgrid_unsubscribe_group" "default" {
-	name   = "default-unsubscribe-group"
-	description = "The default unsubscribe group"
-    is_default = true
-}
+
+	resource "sendgrid_unsubscribe_group" "default" {
+		name   = "default-unsubscribe-group"
+		description = "The default unsubscribe group"
+	    is_default = true
+	}
+
 ```
 
 ## Argument Reference

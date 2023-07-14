@@ -5,12 +5,14 @@ Provide a resource to manage parse webhook settings.
 ## Example Usage
 
 ```hcl
-resource "sendgrid_parse_webhook" "default" {
-	hostname = "parse.foo.bar"
-    url = "https://foo.bar/sendgrid/inbound"
-    spam_check = false
-    send_raw = false
-}
+
+	resource "sendgrid_parse_webhook" "default" {
+		hostname = "parse.foo.bar"
+	    url = "https://foo.bar/sendgrid/inbound"
+	    spam_check = false
+	    send_raw = false
+	}
+
 ```
 
 ## Argument Reference
