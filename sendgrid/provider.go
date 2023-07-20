@@ -91,6 +91,7 @@ func Provider() *schema.Provider {
 			"sendgrid_domain_authentication":            resourceSendgridDomainAuthentication(),
 			"sendgrid_domain_authentication_validation": resourceSendgridDomainAuthenticationValidation(),
 			"sendgrid_link_branding":                    resourceSendgridLinkBranding(),
+			"sendgrid_link_branding_validation":         resourceSendgridLinkBrandingValidation(),
 			"sendgrid_sso_integration":                  resourceSendgridSSOIntegration(),
 			"sendgrid_sso_certificate":                  resourceSendgridSSOCertificate(),
 			"sendgrid_teammate":                         resourceSendgridTeammate(),
