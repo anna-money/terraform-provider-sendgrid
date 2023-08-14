@@ -1,0 +1,21 @@
+version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: "/"
+    schedule:
+      interval: monthly
+    labels:
+      - dependencies
+      - go
+    reviewers:
+      - "anna-money/sre-team"
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    rebase-strategy: disabled
+    schedule:
+      interval: monthly
+    labels:
+      - dependencies
+      - github_actions
+    reviewers:
+      - "anna-money/sre-team"
