@@ -8,7 +8,7 @@ require (
 	github.com/hashicorp/terraform-plugin-log v0.9.0
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.29.0
 	github.com/sendgrid/rest v2.6.9+incompatible
-	github.com/sendgrid/sendgrid-go v3.12.0+incompatible
+	github.com/sendgrid/sendgrid-go v3.13.0+incompatible
 )
 
 require (
