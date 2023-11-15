@@ -127,6 +127,7 @@ func resourceSendgridTemplateVersionCreate(ctx context.Context, d *schema.Resour
 		Active:               d.Get("active").(int),
 		Name:                 d.Get("name").(string),
 		HTMLContent:          d.Get("html_content").(string),
+		PlainContent:         d.Get("plain_content").(string),
 		GeneratePlainContent: d.Get("generate_plain_content").(bool),
 		Subject:              d.Get("subject").(string),
 		Editor:               d.Get("editor").(string),
@@ -227,6 +228,10 @@ func resourceSendgridTemplateVersionUpdate(
 
 	if d.HasChange("html_content") {
 		templateVersion.HTMLContent = d.Get("html_content").(string)
+	}
+
+	if d.HasChange("plain_content") {
+		templateVersion.PlainContent = d.Get("plain_content").(string)
 	}
 
 	if d.HasChange("generate_plain_content") {
