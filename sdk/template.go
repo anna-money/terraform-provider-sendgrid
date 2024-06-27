@@ -13,7 +13,7 @@ type Template struct {
 	Generation string            `json:"generation,omitempty"`
 	UpdatedAt  string            `json:"updated_at,omitempty"` //nolint:tagliatelle
 	Versions   []TemplateVersion `json:"versions,omitempty"`
-	Warnings   []string          `json:"warnings,omitempty"`
+	Warning    Warning           `json:"warning,omitempty"`
 }
 
 type Templates struct {
