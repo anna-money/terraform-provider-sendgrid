@@ -23,11 +23,41 @@ jobs:
         with:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
 
+      - name: Install spacectl
+        uses: spacelift-io/setup-spacectl@v1.3.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v3.0.0
+        uses: goreleaser/goreleaser-action@v6.0.0
         with:
-          version: latest
+          distribution: goreleaser
+          version: "~> v2"
           args: release --rm-dist
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
+
+      - name: Release new version to spacelift
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GPG_KEY_ID: ${{ steps.import_gpg.outputs.keyid }}
+          SPACELIFT_API_KEY_ENDPOINT: https://spacelift.ktl.net
+          SPACELIFT_API_KEY_ID: ${{ secrets.SPACELIFT_API_KEY_ID }}
+          SPACELIFT_API_KEY_SECRET: ${{ secrets.SPACELIFT_API_KEY_SECRET }}
+        run:
+          spacectl provider create-version --type=sendgrid
+
+      - name: Publish provider
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GPG_KEY_ID: ${{ steps.import_gpg.outputs.keyid }}
+          SPACELIFT_API_KEY_ENDPOINT: https://spacelift.ktl.net
+          SPACELIFT_API_KEY_ID: ${{ secrets.SPACELIFT_API_KEY_ID }}
+          SPACELIFT_API_KEY_SECRET: ${{ secrets.SPACELIFT_API_KEY_SECRET }}
+        run: |
+          spacectl provider list-versions --type sendgrid -o json > versions.json
+          VERSION_NUMBER=${{ github.ref_name }}
+          VERSION_ID=$(jq -r --arg version "${VERSION_NUMBER#v}" '.versions[] | select(.number == $version) | .id' versions.json)
+          echo "Publishing ID: $VERSION_ID"
+          spacectl provider publish-version --version=$VERSION_ID
