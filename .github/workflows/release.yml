@@ -33,7 +33,7 @@ jobs:
         with:
           distribution: goreleaser
           version: "~> v2"
-          args: release --rm-dist
+          args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
@@ -45,8 +45,7 @@ jobs:
           SPACELIFT_API_KEY_ENDPOINT: https://spacelift.ktl.net
           SPACELIFT_API_KEY_ID: ${{ secrets.SPACELIFT_API_KEY_ID }}
           SPACELIFT_API_KEY_SECRET: ${{ secrets.SPACELIFT_API_KEY_SECRET }}
-        run:
-          spacectl provider create-version --type=sendgrid
+        run: spacectl provider create-version --type=sendgrid
 
       - name: Publish provider
         if: startsWith(github.ref, 'refs/tags/')
