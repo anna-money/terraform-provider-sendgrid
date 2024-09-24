@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -135,19 +135,17 @@ func RetryOnRateLimit(
 ) (interface{}, error) {
 	var resp interface{}
 
-	err := resource.RetryContext(
+	err := retry.RetryContext(
 		ctx,
-		d.Timeout(schema.TimeoutCreate), func() *resource.RetryError {
+		d.Timeout(schema.TimeoutCreate), func() *retry.RetryError {
 			var requestErr RequestError
 			resp, requestErr = f()
 			if requestErr.Err != nil {
 				if requestErr.StatusCode == http.StatusTooManyRequests {
-					return resource.RetryableError(requestErr.Err)
+					return retry.RetryableError(requestErr.Err)
 				}
-
-				return resource.NonRetryableError(requestErr.Err)
+				return retry.NonRetryableError(requestErr.Err)
 			}
-
 			return nil
 		})
 	if err != nil {
