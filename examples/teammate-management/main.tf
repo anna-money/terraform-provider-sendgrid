@@ -1,8 +1,8 @@
 terraform {
   required_providers {
     sendgrid = {
-      source  = "anna-money/sendgrid"
-      version = ">= 1.0"
+      source  = "arslanbekov/sendgrid"
+      version = "~> 2.0"
     }
   }
 }

@@ -8,7 +8,7 @@ updates:
       - dependencies
       - go
     reviewers:
-      - "anna-money/sre-team"
+      - "arslanbekov"
   - package-ecosystem: "github-actions"
     directory: "/"
     rebase-strategy: disabled
@@ -18,4 +18,4 @@ updates:
       - dependencies
       - github_actions
     reviewers:
-      - "anna-money/sre-team"
+      - "arslanbekov"
