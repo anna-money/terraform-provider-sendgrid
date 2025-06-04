@@ -107,17 +107,18 @@ func resourceSendgridTeammateCreate(ctx context.Context, d *schema.ResourceData,
 		"email": email, "is_admin": isAdmin, "scopes": scopes,
 	})
 
-	var user *sendgrid.User
-	var err error
-	if isSSO {
-		user, err = client.CreateSSOUser(ctx, firstName, lastName, email, scopes, isAdmin)
-	} else {
-		user, err = client.CreateUser(ctx, email, scopes, isAdmin)
-	}
+	userStruct, err := sendgrid.RetryOnRateLimit(ctx, d, func() (interface{}, sendgrid.RequestError) {
+		if isSSO {
+			return client.CreateSSOUser(ctx, firstName, lastName, email, scopes, isAdmin)
+		} else {
+			return client.CreateUser(ctx, email, scopes, isAdmin)
+		}
+	})
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
+	user := userStruct.(*sendgrid.User)
 	d.SetId(user.Email)
 	if err := d.Set("email", user.Email); err != nil {
 		return diag.FromErr(err)
@@ -132,10 +133,14 @@ func resourceSendgridTeammateRead(ctx context.Context, d *schema.ResourceData, m
 	var diags diag.Diagnostics
 	email := d.Id()
 
-	teammate, err := client.ReadUser(ctx, email)
+	teammateStruct, err := sendgrid.RetryOnRateLimit(ctx, d, func() (interface{}, sendgrid.RequestError) {
+		return client.ReadUser(ctx, email)
+	})
 	if err != nil {
 		return append(diags, diag.FromErr(err)...)
 	}
+
+	teammate := teammateStruct.(*sendgrid.User)
 
 	// There is no need to track admin scopes since they have full access.
 	if teammate.IsAdmin {
@@ -178,12 +183,13 @@ func resourceSendgridTeammateUpdate(ctx context.Context, d *schema.ResourceData,
 		}
 	}
 
-	var err error
-	if isSSO {
-		_, err = client.UpdateSSOUser(ctx, firstName, lastName, email, scopes, isAdmin)
-	} else {
-		_, err = client.UpdateUser(ctx, email, scopes, isAdmin)
-	}
+	_, err := sendgrid.RetryOnRateLimit(ctx, d, func() (interface{}, sendgrid.RequestError) {
+		if isSSO {
+			return client.UpdateSSOUser(ctx, firstName, lastName, email, scopes, isAdmin)
+		} else {
+			return client.UpdateUser(ctx, email, scopes, isAdmin)
+		}
+	})
 
 	if err != nil {
 		return diag.FromErr(err)
@@ -197,7 +203,10 @@ func resourceSendgridTeammateDelete(ctx context.Context, d *schema.ResourceData,
 
 	var diags diag.Diagnostics
 	userEmail := d.Id()
-	_, err := client.DeleteUser(ctx, userEmail)
+
+	_, err := sendgrid.RetryOnRateLimit(ctx, d, func() (interface{}, sendgrid.RequestError) {
+		return client.DeleteUser(ctx, userEmail)
+	})
 	if err != nil {
 		return append(diags, diag.FromErr(err)...)
 	}
