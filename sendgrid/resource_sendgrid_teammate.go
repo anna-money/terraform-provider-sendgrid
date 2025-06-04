@@ -18,6 +18,7 @@ package sendgrid
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 
 	sendgrid "github.com/arslanbekov/terraform-provider-sendgrid/sdk"
@@ -295,8 +296,9 @@ var validSendgridScopes = map[string]bool{
 
 // sendgridAutomaticScopes are scopes that SendGrid sets automatically and should not be included in user input
 var sendgridAutomaticScopes = map[string]bool{
-	"2fa_exempt":   true,
-	"2fa_required": true,
+	"2fa_exempt":                 true,
+	"2fa_required":               true,
+	"sender_verification_legacy": true, // SendGrid manages this scope automatically
 }
 
 func resourceSendgridTeammate() *schema.Resource {
@@ -542,6 +544,9 @@ func resourceSendgridTeammateRead(ctx context.Context, d *schema.ResourceData, m
 		}
 	}
 
+	// Sort scopes to ensure consistent ordering and prevent drift
+	sort.Strings(filteredScopes)
+
 	// Determine user status based on UserType
 	userStatus := "active"
 	if teammate.UserType == "pending" {
@@ -568,6 +573,16 @@ func resourceSendgridTeammateUpdate(ctx context.Context, d *schema.ResourceData,
 	isSSO := d.Get("is_sso").(bool)
 	firstName := d.Get("first_name").(string)
 	lastName := d.Get("last_name").(string)
+
+	// Check if user is pending - pending users are read-only after invitation is sent
+	userStatus := d.Get("user_status").(string)
+	if userStatus == "pending" {
+		tflog.Info(ctx, "Pending user detected - skipping update. Pending users are read-only until they accept their invitation", map[string]interface{}{
+			"email": email,
+		})
+		// For pending users, we only refresh their current state
+		return resourceSendgridTeammateRead(ctx, d, meta)
+	}
 
 	scopesSet := d.Get("scopes").(*schema.Set)
 
