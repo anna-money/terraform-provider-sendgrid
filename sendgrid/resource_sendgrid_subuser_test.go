@@ -13,9 +13,8 @@ import (
 
 func TestAccSendgridSubuserBasic(t *testing.T) {
 	username := "terraform-subuser-" + acctest.RandString(10)
-	password := acctest.RandString(10)
-	email := username + "@example.org"
-	ips := []string{"127.0.0.1", "255.255.255.255"}
+	email := username + "@example.com"
+	password := "TerraformTest123!"
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -23,9 +22,84 @@ func TestAccSendgridSubuserBasic(t *testing.T) {
 		CheckDestroy: testAccCheckSendgridSubuserDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccCheckSendgridSubuserConfigBasic(username, password, email, ips),
+				Config: testAccCheckSendgridSubuserConfigBasic(username, email, password),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckSendgridSubuserExists("sendgrid_subuser.new"),
+					testAccCheckSendgridSubuserExists("sendgrid_subuser.test"),
+					resource.TestCheckResourceAttr("sendgrid_subuser.test", "username", username),
+					resource.TestCheckResourceAttr("sendgrid_subuser.test", "email", email),
+					resource.TestCheckResourceAttr("sendgrid_subuser.test", "disabled", "false"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccSendgridSubuserWithIps(t *testing.T) {
+	username := "terraform-subuser-ips-" + acctest.RandString(10)
+	email := username + "@example.com"
+	password := "TerraformTest123!"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckSendgridSubuserDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccCheckSendgridSubuserConfigWithIps(username, email, password),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckSendgridSubuserExists("sendgrid_subuser.ips"),
+					resource.TestCheckResourceAttr("sendgrid_subuser.ips", "username", username),
+					resource.TestCheckResourceAttr("sendgrid_subuser.ips", "email", email),
+					resource.TestCheckResourceAttr("sendgrid_subuser.ips", "ips.#", "1"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccSendgridSubuserUpdate(t *testing.T) {
+	username := "terraform-subuser-update-" + acctest.RandString(10)
+	email := username + "@example.com"
+	password := "TerraformTest123!"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckSendgridSubuserDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccCheckSendgridSubuserConfigBasic(username, email, password),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckSendgridSubuserExists("sendgrid_subuser.test"),
+					resource.TestCheckResourceAttr("sendgrid_subuser.test", "disabled", "false"),
+				),
+			},
+			{
+				Config: testAccCheckSendgridSubuserConfigDisabled(username, email, password),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckSendgridSubuserExists("sendgrid_subuser.test"),
+					resource.TestCheckResourceAttr("sendgrid_subuser.test", "disabled", "true"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccSendgridSubuserWithRateLimiting(t *testing.T) {
+	username := "terraform-subuser-rate-" + acctest.RandString(10)
+	email := username + "@example.com"
+	password := "TerraformTest123!"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckSendgridSubuserDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccCheckSendgridSubuserConfigWithTimeouts(username, email, password),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckSendgridSubuserExists("sendgrid_subuser.rate_limit"),
+					resource.TestCheckResourceAttr("sendgrid_subuser.rate_limit", "username", username),
 				),
 			},
 		},
@@ -40,26 +114,67 @@ func testAccCheckSendgridSubuserDestroy(s *terraform.State) error {
 			continue
 		}
 
-		SubuserName := rs.Primary.ID
+		username := rs.Primary.ID
 		ctx := context.Background()
-		_, requestErr := c.DeleteSubuser(ctx, SubuserName)
-		if requestErr.Err != nil {
-			return requestErr.Err
+
+		_, err := c.ReadSubUser(ctx, username)
+		if err.StatusCode != 404 {
+			return fmt.Errorf("subuser still exists: %s", username)
 		}
 	}
 
 	return nil
 }
 
-func testAccCheckSendgridSubuserConfigBasic(username, password, email string, ips []string) string {
+func testAccCheckSendgridSubuserConfigBasic(username, email, password string) string {
 	return fmt.Sprintf(`
-	resource "sendgrid_subuser" "subuser" {
-		username = %s
-		password = %s
-		email    = %s
-		ips      = %s
+resource "sendgrid_subuser" "test" {
+	username = "%s"
+	email    = "%s"
+	password = "%s"
+	disabled = false
+}
+`, username, email, password)
+}
+
+func testAccCheckSendgridSubuserConfigWithIps(username, email, password string) string {
+	return fmt.Sprintf(`
+resource "sendgrid_subuser" "ips" {
+	username = "%s"
+	email    = "%s"
+	password = "%s"
+	disabled = false
+	ips      = ["192.168.1.1"]
+}
+`, username, email, password)
+}
+
+func testAccCheckSendgridSubuserConfigDisabled(username, email, password string) string {
+	return fmt.Sprintf(`
+resource "sendgrid_subuser" "test" {
+	username = "%s"
+	email    = "%s"
+	password = "%s"
+	disabled = true
+}
+`, username, email, password)
+}
+
+func testAccCheckSendgridSubuserConfigWithTimeouts(username, email, password string) string {
+	return fmt.Sprintf(`
+resource "sendgrid_subuser" "rate_limit" {
+	username = "%s"
+	email    = "%s"
+	password = "%s"
+	disabled = false
+
+	timeouts {
+		create = "30m"
+		update = "30m"
+		delete = "30m"
 	}
-	`, username, password, email, ips)
+}
+`, username, email, password)
 }
 
 func testAccCheckSendgridSubuserExists(n string) resource.TestCheckFunc {
@@ -71,7 +186,15 @@ func testAccCheckSendgridSubuserExists(n string) resource.TestCheckFunc {
 		}
 
 		if rs.Primary.ID == "" {
-			return fmt.Errorf("No SubUserName set")
+			return fmt.Errorf("No subuser username set")
+		}
+
+		c := testAccProvider.Meta().(*sendgrid.Client)
+		ctx := context.Background()
+
+		_, err := c.ReadSubUser(ctx, rs.Primary.ID)
+		if err.Err != nil {
+			return fmt.Errorf("subuser not found: %s", rs.Primary.ID)
 		}
 
 		return nil
