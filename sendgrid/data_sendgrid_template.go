@@ -59,11 +59,14 @@ func dataSendgridTemplateRead(context context.Context, d *schema.ResourceData, m
 			generation = "dynamic"
 		}
 
-		templates, err := c.ReadTemplates(context, generation)
+		templatesStruct, err := sendgrid.RetryOnRateLimit(context, d, func() (interface{}, sendgrid.RequestError) {
+			return c.ReadTemplates(context, generation)
+		})
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
+		templates := templatesStruct.([]sendgrid.Template)
 		names := make([]string, 0)
 
 		for i := range templates {
@@ -72,7 +75,7 @@ func dataSendgridTemplateRead(context context.Context, d *schema.ResourceData, m
 			if template.Name == name {
 				d.SetId(template.ID)
 
-				if err = sendgridTemplateParse(&template, d); err != nil {
+				if err := sendgridTemplateParse(&template, d); err != nil {
 					return diag.FromErr(err)
 				}
 

@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 )
 
 type User struct {
@@ -42,21 +43,27 @@ type PendingUser struct {
 	} `json:"result"`
 }
 
-func parseUser(respBody string) (*User, error) {
+func parseUser(respBody string) (*User, RequestError) {
 	var body User
 
 	err := json.Unmarshal([]byte(respBody), &body)
 	if err != nil {
-		return nil, fmt.Errorf("failed parsing teammate: %w", err)
+		return nil, RequestError{
+			StatusCode: http.StatusInternalServerError,
+			Err:        fmt.Errorf("failed parsing teammate: %w", err),
+		}
 	}
 
-	return &body, nil
+	return &body, RequestError{StatusCode: http.StatusOK, Err: nil}
 }
 
-func (c *Client) GetUsernameByEmail(ctx context.Context, email string) (string, error) {
-	respBody, _, err := c.Get(ctx, "GET", "/teammates?limit=10000")
+func (c *Client) GetUsernameByEmail(ctx context.Context, email string) (string, RequestError) {
+	respBody, statusCode, err := c.Get(ctx, "GET", "/teammates?limit=10000")
 	if err != nil {
-		return "", err
+		return "", RequestError{
+			StatusCode: statusCode,
+			Err:        err,
+		}
 	}
 
 	users := &Users{}
@@ -64,32 +71,41 @@ func (c *Client) GetUsernameByEmail(ctx context.Context, email string) (string, 
 	decoder := json.NewDecoder(bytes.NewReader([]byte(respBody)))
 	err = decoder.Decode(users)
 	if err != nil {
-		return "", err
+		return "", RequestError{
+			StatusCode: http.StatusInternalServerError,
+			Err:        err,
+		}
 	}
 
 	for _, user := range users.Result {
 		if user.Email == email && user.Username != "" {
-			return user.Username, nil
+			return user.Username, RequestError{StatusCode: http.StatusOK, Err: nil}
 		}
 	}
-	return "", fmt.Errorf("username with email %s not found", email)
+	return "", RequestError{
+		StatusCode: http.StatusNotFound,
+		Err:        fmt.Errorf("username with email %s not found", email),
+	}
 }
 
-func (c *Client) CreateUser(ctx context.Context, email string, scopes []string, isAdmin bool) (*User, error) {
-	respBody, _, err := c.Post(ctx, "POST", "/teammates", User{
+func (c *Client) CreateUser(ctx context.Context, email string, scopes []string, isAdmin bool) (*User, RequestError) {
+	respBody, statusCode, err := c.Post(ctx, "POST", "/teammates", User{
 		Email:   email,
 		IsAdmin: isAdmin,
 		Scopes:  scopes,
 	})
 	if err != nil {
-		return nil, err
+		return nil, RequestError{
+			StatusCode: statusCode,
+			Err:        err,
+		}
 	}
 
 	return parseUser(respBody)
 }
 
-func (c *Client) CreateSSOUser(ctx context.Context, firstName, lastName, email string, scopes []string, isAdmin bool) (*User, error) {
-	respBody, _, err := c.Post(ctx, "POST", "/sso/teammates", User{
+func (c *Client) CreateSSOUser(ctx context.Context, firstName, lastName, email string, scopes []string, isAdmin bool) (*User, RequestError) {
+	respBody, statusCode, err := c.Post(ctx, "POST", "/sso/teammates", User{
 		FirstName: firstName,
 		LastName:  lastName,
 		Email:     email,
@@ -97,101 +113,135 @@ func (c *Client) CreateSSOUser(ctx context.Context, firstName, lastName, email s
 		Scopes:    scopes,
 	})
 	if err != nil {
-		return nil, err
+		return nil, RequestError{
+			StatusCode: statusCode,
+			Err:        err,
+		}
 	}
 
 	return parseUser(respBody)
 }
 
-func (c *Client) ReadUser(ctx context.Context, email string) (*User, error) {
-	username, err := c.GetUsernameByEmail(ctx, email)
-	if err != nil {
-		return nil, err
+func (c *Client) ReadUser(ctx context.Context, email string) (*User, RequestError) {
+	username, requestErr := c.GetUsernameByEmail(ctx, email)
+	if requestErr.Err != nil {
+		return nil, requestErr
 	}
 
-	respBody, _, err := c.Get(ctx, "GET", "/teammates/"+username)
+	respBody, statusCode, err := c.Get(ctx, "GET", "/teammates/"+username)
 	if err != nil {
-		return nil, err
+		return nil, RequestError{
+			StatusCode: statusCode,
+			Err:        err,
+		}
 	}
 
 	var u User
 	err = json.Unmarshal([]byte(respBody), &u)
 	if err != nil {
-		return nil, err
+		return nil, RequestError{
+			StatusCode: http.StatusInternalServerError,
+			Err:        err,
+		}
 	}
-	return &u, nil
+	return &u, RequestError{StatusCode: http.StatusOK, Err: nil}
 }
 
-func (c *Client) UpdateUser(ctx context.Context, email string, scopes []string, isAdmin bool) (*User, error) {
-	username, err := c.GetUsernameByEmail(ctx, email)
-	if err != nil {
-		return nil, err
+func (c *Client) UpdateUser(ctx context.Context, email string, scopes []string, isAdmin bool) (*User, RequestError) {
+	username, requestErr := c.GetUsernameByEmail(ctx, email)
+	if requestErr.Err != nil {
+		return nil, requestErr
 	}
 
-	respBody, _, err := c.Post(ctx, "PATCH", "/teammates/"+username, User{
+	respBody, statusCode, err := c.Post(ctx, "PATCH", "/teammates/"+username, User{
 		IsAdmin: isAdmin,
 		Scopes:  scopes,
 	})
 	if err != nil {
-		return nil, err
+		return nil, RequestError{
+			StatusCode: statusCode,
+			Err:        err,
+		}
 	}
 
 	return parseUser(respBody)
 }
 
-func (c *Client) UpdateSSOUser(ctx context.Context, firstName, lastName, email string, scopes []string, isAdmin bool) (*User, error) {
-	username, err := c.GetUsernameByEmail(ctx, email)
-	if err != nil {
-		return nil, err
+func (c *Client) UpdateSSOUser(ctx context.Context, firstName, lastName, email string, scopes []string, isAdmin bool) (*User, RequestError) {
+	username, requestErr := c.GetUsernameByEmail(ctx, email)
+	if requestErr.Err != nil {
+		return nil, requestErr
 	}
 
-	respBody, _, err := c.Post(ctx, "PATCH", "/sso/teammates/"+username, User{
+	respBody, statusCode, err := c.Post(ctx, "PATCH", "/sso/teammates/"+username, User{
 		FirstName: firstName,
 		LastName:  lastName,
 		IsAdmin:   isAdmin,
 		Scopes:    scopes,
 	})
 	if err != nil {
-		return nil, err
+		return nil, RequestError{
+			StatusCode: statusCode,
+			Err:        err,
+		}
 	}
 
 	return parseUser(respBody)
 }
 
-func (c *Client) DeleteUser(ctx context.Context, email string) (bool, error) {
-	username, err := c.GetUsernameByEmail(ctx, email)
-	if err != nil {
-		tokenInvite, err := c.GetPendingUserToken(ctx, email)
-		if _, statusCode, err := c.Get(ctx, "DELETE", "/teammates/pending/"+tokenInvite); statusCode > 299 || err != nil {
-			return false, fmt.Errorf("failed deleting user: %w", err)
+func (c *Client) DeleteUser(ctx context.Context, email string) (bool, RequestError) {
+	username, requestErr := c.GetUsernameByEmail(ctx, email)
+	if requestErr.Err != nil {
+		tokenInvite, tokenErr := c.GetPendingUserToken(ctx, email)
+		if tokenErr.Err != nil {
+			return false, tokenErr
 		}
-		return false, err
+
+		if _, statusCode, err := c.Get(ctx, "DELETE", "/teammates/pending/"+tokenInvite); statusCode > 299 || err != nil {
+			return false, RequestError{
+				StatusCode: statusCode,
+				Err:        fmt.Errorf("failed deleting user: %w", err),
+			}
+		}
+		return false, RequestError{StatusCode: http.StatusOK, Err: nil}
 	}
 
 	if _, statusCode, err := c.Get(ctx, "DELETE", "/teammates/"+username); statusCode > 299 || err != nil {
-		return false, fmt.Errorf("failed deleting user: %w", err)
+		return false, RequestError{
+			StatusCode: statusCode,
+			Err:        fmt.Errorf("failed deleting user: %w", err),
+		}
 	}
 
-	return true, nil
+	return true, RequestError{StatusCode: http.StatusOK, Err: nil}
 }
 
-func (c *Client) GetPendingUserToken(ctx context.Context, email string) (string, error) {
-	respBody, _, err := c.Get(ctx, "GET", "/teammates/pending")
+func (c *Client) GetPendingUserToken(ctx context.Context, email string) (string, RequestError) {
+	respBody, statusCode, err := c.Get(ctx, "GET", "/teammates/pending")
 	if err != nil {
-		return "", err
+		return "", RequestError{
+			StatusCode: statusCode,
+			Err:        err,
+		}
 	}
 
 	pendingUsers := &PendingUser{}
 	decoder := json.NewDecoder(bytes.NewReader([]byte(respBody)))
 	err = decoder.Decode(pendingUsers)
 	if err != nil {
-		return "", err
+		return "", RequestError{
+			StatusCode: http.StatusInternalServerError,
+			Err:        err,
+		}
 	}
 
 	for _, user := range pendingUsers.Result {
 		if user.Email == email {
-			return user.Token, nil
+			return user.Token, RequestError{StatusCode: http.StatusOK, Err: nil}
 		}
 	}
-	return "", fmt.Errorf("pending user with email %s not found", email)
+	return "", RequestError{
+		StatusCode: http.StatusNotFound,
+		Err:        fmt.Errorf("pending user with email %s not found", email),
+	}
 }

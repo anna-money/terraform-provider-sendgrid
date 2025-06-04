@@ -1,4 +1,6 @@
-name: test
+name: Tests
+permissions:
+  contents: read
 on:
   push:
     branches:
@@ -7,22 +9,64 @@ on:
     branches: [master]
 
 jobs:
-  build:
-    name: Build
+  unit-tests:
+    name: Unit Tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
           go-version: 1.21
+
       - name: Get dependencies
         run: |
           go get -v -t ./...
+
       - name: Build
         run: go build -v .
-      - name: Test
-        run: go test -v $(go list ./... | grep -v /sdk$) -timeout=30s
+
+      - name: Run Unit Tests
+        run: |
+          # Run only non-acceptance tests (TestProvider and TestProvider_impl)
+          go test -v ./sendgrid/ -run '^TestProvider' -timeout=30s
+
+      - name: Compile Acceptance Tests
+        run: |
+          # Compile acceptance tests to ensure they build correctly
+          go test -c ./sendgrid/ -o /dev/null
+
+  # Optional: Acceptance tests (only run on master branch)
+  acceptance-tests:
+    name: Acceptance Tests (Optional)
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.21
+
+      - name: Get dependencies
+        run: |
+          go get -v -t ./...
+
+      - name: Run Acceptance Tests
+        env:
+          TF_ACC: "1"
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+        run: |
+          if [ -z "$SENDGRID_API_KEY" ]; then
+            echo "SENDGRID_API_KEY not set, skipping acceptance tests"
+            exit 0
+          fi
+          go test -v ./sendgrid/ -run '^TestAcc' -timeout=30m -parallel=1

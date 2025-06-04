@@ -47,9 +47,9 @@ func testAccCheckSendgridTemplateVersionDestroy(s *terraform.State) error {
 		id := rs.Primary.ID
 
 		ctx := context.Background()
-		_, err := c.DeleteTemplateVersion(ctx, templateID, id)
-		if err != nil {
-			return err
+		_, requestErr := c.DeleteTemplateVersion(ctx, templateID, id)
+		if requestErr.Err != nil {
+			return requestErr.Err
 		}
 	}
 

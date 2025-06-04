@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 )
 
 // TemplateVersion is a Sendgrid transactional template version.
@@ -27,103 +28,151 @@ type Warning struct {
 	Message string `json:"message,omitempty"`
 }
 
-func parseTemplateVersion(respBody string) (*TemplateVersion, error) {
+func parseTemplateVersion(respBody string) (*TemplateVersion, RequestError) {
 	var body TemplateVersion
 
 	err := json.Unmarshal([]byte(respBody), &body)
 	if err != nil {
-		return nil, fmt.Errorf("failed parsing template version: %w", err)
+		return nil, RequestError{
+			StatusCode: http.StatusInternalServerError,
+			Err:        fmt.Errorf("failed parsing template version: %w", err),
+		}
 	}
 
-	return &body, nil
+	return &body, RequestError{StatusCode: http.StatusOK, Err: nil}
 }
 
 // CreateTemplateVersion creates a new version of a transactional template and returns it.
-func (c *Client) CreateTemplateVersion(ctx context.Context, t TemplateVersion) (*TemplateVersion, error) {
+func (c *Client) CreateTemplateVersion(ctx context.Context, t TemplateVersion) (*TemplateVersion, RequestError) {
 	if t.TemplateID == "" {
-		return nil, ErrTemplateVersionIDRequired
+		return nil, RequestError{
+			StatusCode: http.StatusInternalServerError,
+			Err:        ErrTemplateVersionIDRequired,
+		}
 	}
 
 	if t.Name == "" {
-		return nil, ErrTemplateVersionNameRequired
+		return nil, RequestError{
+			StatusCode: http.StatusInternalServerError,
+			Err:        ErrTemplateVersionNameRequired,
+		}
 	}
 
 	if t.Subject == "" {
-		return nil, ErrTemplateVersionSubjectRequired
+		return nil, RequestError{
+			StatusCode: http.StatusInternalServerError,
+			Err:        ErrTemplateVersionSubjectRequired,
+		}
 	}
 
-	respBody, _, err := c.Post(ctx, "POST", "/templates/"+t.TemplateID+"/versions", t)
+	respBody, statusCode, err := c.Post(ctx, "POST", "/templates/"+t.TemplateID+"/versions", t)
 	if err != nil {
-		return nil, fmt.Errorf("failed creating template version: %w", err)
+		return nil, RequestError{
+			StatusCode: statusCode,
+			Err:        fmt.Errorf("failed creating template version: %w", err),
+		}
 	}
 
 	return parseTemplateVersion(respBody)
 }
 
 // ReadTemplateVersion retreives a version of a transactional template and returns it.
-func (c *Client) ReadTemplateVersion(ctx context.Context, templateID, id string) (*TemplateVersion, error) {
+func (c *Client) ReadTemplateVersion(ctx context.Context, templateID, id string) (*TemplateVersion, RequestError) {
 	if templateID == "" {
-		return nil, ErrTemplateVersionIDRequired
+		return nil, RequestError{
+			StatusCode: http.StatusInternalServerError,
+			Err:        ErrTemplateVersionIDRequired,
+		}
 	}
 
 	if id == "" {
-		return nil, ErrTemplateIDRequired
+		return nil, RequestError{
+			StatusCode: http.StatusInternalServerError,
+			Err:        ErrTemplateIDRequired,
+		}
 	}
 
-	respBody, _, err := c.Get(ctx, "GET", "/templates/"+templateID+"/versions/"+id)
+	respBody, statusCode, err := c.Get(ctx, "GET", "/templates/"+templateID+"/versions/"+id)
 	if err != nil {
-		return nil, fmt.Errorf("failed reading template version: %w", err)
+		return nil, RequestError{
+			StatusCode: statusCode,
+			Err:        fmt.Errorf("failed reading template version: %w", err),
+		}
 	}
 
 	return parseTemplateVersion(respBody)
 }
 
 // UpdateTemplateVersion edits a version of a transactional template and returns it.
-func (c *Client) UpdateTemplateVersion(ctx context.Context, t TemplateVersion) (*TemplateVersion, error) {
+func (c *Client) UpdateTemplateVersion(ctx context.Context, t TemplateVersion) (*TemplateVersion, RequestError) {
 	if t.ID == "" {
-		return nil, ErrTemplateVersionIDRequired
+		return nil, RequestError{
+			StatusCode: http.StatusInternalServerError,
+			Err:        ErrTemplateVersionIDRequired,
+		}
 	}
 
 	if t.TemplateID == "" {
-		return nil, ErrTemplateIDRequired
+		return nil, RequestError{
+			StatusCode: http.StatusInternalServerError,
+			Err:        ErrTemplateIDRequired,
+		}
 	}
 
-	respBody, _, err := c.Post(ctx, "PATCH", "/templates/"+t.TemplateID+"/versions/"+t.ID, t)
+	respBody, statusCode, err := c.Post(ctx, "PATCH", "/templates/"+t.TemplateID+"/versions/"+t.ID, t)
 	if err != nil {
-		return nil, fmt.Errorf("failed updating template version: %w", err)
+		return nil, RequestError{
+			StatusCode: statusCode,
+			Err:        fmt.Errorf("failed updating template version: %w", err),
+		}
 	}
 
 	return parseTemplateVersion(respBody)
 }
 
 // ActivateTemplateVersion activates a version of a transactional template and returns it.
-func (c *Client) ActivateTemplateVersion(ctx context.Context, t TemplateVersion) (*TemplateVersion, error) {
+func (c *Client) ActivateTemplateVersion(ctx context.Context, t TemplateVersion) (*TemplateVersion, RequestError) {
 	if t.ID == "" {
-		return nil, ErrTemplateVersionIDRequired
+		return nil, RequestError{
+			StatusCode: http.StatusInternalServerError,
+			Err:        ErrTemplateVersionIDRequired,
+		}
 	}
 
 	if t.TemplateID == "" {
-		return nil, ErrTemplateIDRequired
+		return nil, RequestError{
+			StatusCode: http.StatusInternalServerError,
+			Err:        ErrTemplateIDRequired,
+		}
 	}
 
-	respBody, _, err := c.Post(ctx, "POST", "/templates/"+t.TemplateID+"/versions/"+t.ID+"/activate", t)
+	respBody, statusCode, err := c.Post(ctx, "POST", "/templates/"+t.TemplateID+"/versions/"+t.ID+"/activate", t)
 	if err != nil {
-		return nil, fmt.Errorf("failed activating template version: %w", err)
+		return nil, RequestError{
+			StatusCode: statusCode,
+			Err:        fmt.Errorf("failed activating template version: %w", err),
+		}
 	}
 
 	return parseTemplateVersion(respBody)
 }
 
 // DeleteTemplateVersion deletes a version of a transactional template.
-func (c *Client) DeleteTemplateVersion(ctx context.Context, templateID, id string) (bool, error) {
+func (c *Client) DeleteTemplateVersion(ctx context.Context, templateID, id string) (bool, RequestError) {
 	if templateID == "" {
-		return false, ErrTemplateVersionIDRequired
+		return false, RequestError{
+			StatusCode: http.StatusInternalServerError,
+			Err:        ErrTemplateVersionIDRequired,
+		}
 	}
 
 	if _, statusCode, err := c.Get(ctx, "DELETE", "/templates/"+templateID+"/versions/"+id); statusCode > 299 ||
 		err != nil {
-		return false, fmt.Errorf("failed deleting template version: %w", err)
+		return false, RequestError{
+			StatusCode: statusCode,
+			Err:        fmt.Errorf("failed deleting template version: %w", err),
+		}
 	}
 
-	return true, nil
+	return true, RequestError{StatusCode: http.StatusOK, Err: nil}
 }

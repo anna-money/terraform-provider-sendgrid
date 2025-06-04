@@ -62,10 +62,14 @@ func dataSendgridTeammateRead(context context.Context, d *schema.ResourceData, m
 	email := d.Get("email").(string)
 	tflog.Debug(context, "Reading user", map[string]interface{}{"email": email})
 
-	teammate, err := client.ReadUser(context, email)
+	teammateStruct, err := sendgrid.RetryOnRateLimit(context, d, func() (interface{}, sendgrid.RequestError) {
+		return client.ReadUser(context, email)
+	})
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
+	teammate := teammateStruct.(*sendgrid.User)
 
 	d.SetId(teammate.Email)
 	retErr := multierror.Append(

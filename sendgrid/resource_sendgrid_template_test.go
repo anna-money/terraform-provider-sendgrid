@@ -41,9 +41,9 @@ func testAccCheckSendgridTemplateDestroy(s *terraform.State) error {
 		templateID := rs.Primary.ID
 
 		ctx := context.Background()
-		_, err := c.DeleteTemplate(ctx, templateID)
-		if err != nil {
-			return err
+		_, requestErr := c.DeleteTemplate(ctx, templateID)
+		if requestErr.Err != nil {
+			return requestErr.Err
 		}
 	}
 

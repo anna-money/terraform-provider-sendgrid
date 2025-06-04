@@ -122,21 +122,24 @@ func resourceSendgridTemplateVersion() *schema.Resource { //nolint:funlen
 func resourceSendgridTemplateVersionCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	c := m.(*sendgrid.Client)
 
-	templateVersion, err := c.CreateTemplateVersion(ctx, sendgrid.TemplateVersion{
-		TemplateID:           d.Get("template_id").(string),
-		Active:               d.Get("active").(int),
-		Name:                 d.Get("name").(string),
-		HTMLContent:          d.Get("html_content").(string),
-		PlainContent:         d.Get("plain_content").(string),
-		GeneratePlainContent: d.Get("generate_plain_content").(bool),
-		Subject:              d.Get("subject").(string),
-		Editor:               d.Get("editor").(string),
-		TestData:             d.Get("test_data").(string),
+	templateVersionStruct, err := sendgrid.RetryOnRateLimit(ctx, d, func() (interface{}, sendgrid.RequestError) {
+		return c.CreateTemplateVersion(ctx, sendgrid.TemplateVersion{
+			TemplateID:           d.Get("template_id").(string),
+			Active:               d.Get("active").(int),
+			Name:                 d.Get("name").(string),
+			HTMLContent:          d.Get("html_content").(string),
+			PlainContent:         d.Get("plain_content").(string),
+			GeneratePlainContent: d.Get("generate_plain_content").(bool),
+			Subject:              d.Get("subject").(string),
+			Editor:               d.Get("editor").(string),
+			TestData:             d.Get("test_data").(string),
+		})
 	})
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
+	templateVersion := templateVersionStruct.(*sendgrid.TemplateVersion)
 	//nolint:errcheck
 	d.Set("updated_at", templateVersion.UpdatedAt)
 	d.SetId(templateVersion.ID)
@@ -147,11 +150,14 @@ func resourceSendgridTemplateVersionCreate(ctx context.Context, d *schema.Resour
 func resourceSendgridTemplateVersionRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	c := m.(*sendgrid.Client)
 
-	templateVersion, err := c.ReadTemplateVersion(ctx, d.Get("template_id").(string), d.Id())
+	templateVersionStruct, err := sendgrid.RetryOnRateLimit(ctx, d, func() (interface{}, sendgrid.RequestError) {
+		return c.ReadTemplateVersion(ctx, d.Get("template_id").(string), d.Id())
+	})
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
+	templateVersion := templateVersionStruct.(*sendgrid.TemplateVersion)
 	if er := parseTemplateVersion(d, templateVersion); er != nil {
 		return diag.FromErr(er)
 	}
@@ -217,7 +223,10 @@ func resourceSendgridTemplateVersionUpdate(
 	}
 
 	if templateVersion.Active == 1 {
-		if _, err := c.ActivateTemplateVersion(ctx, templateVersion); err != nil {
+		_, err := sendgrid.RetryOnRateLimit(ctx, d, func() (interface{}, sendgrid.RequestError) {
+			return c.ActivateTemplateVersion(ctx, templateVersion)
+		})
+		if err != nil {
 			return diag.FromErr(err)
 		}
 	}
@@ -254,7 +263,10 @@ func resourceSendgridTemplateVersionUpdate(
 		return nil
 	}
 
-	if _, err := c.UpdateTemplateVersion(ctx, templateVersion); err != nil {
+	_, err := sendgrid.RetryOnRateLimit(ctx, d, func() (interface{}, sendgrid.RequestError) {
+		return c.UpdateTemplateVersion(ctx, templateVersion)
+	})
+	if err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -264,7 +276,9 @@ func resourceSendgridTemplateVersionUpdate(
 func resourceSendgridTemplateVersionDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	c := m.(*sendgrid.Client)
 
-	_, err := c.DeleteTemplateVersion(ctx, d.Get("template_id").(string), d.Id())
+	_, err := sendgrid.RetryOnRateLimit(ctx, d, func() (interface{}, sendgrid.RequestError) {
+		return c.DeleteTemplateVersion(ctx, d.Get("template_id").(string), d.Id())
+	})
 	if err != nil {
 		return diag.FromErr(err)
 	}
