@@ -258,10 +258,11 @@ func (c *Client) GetPendingUserToken(ctx context.Context, email string) (string,
 
 	for _, user := range pendingUsers.Result {
 		if user.Email == email {
-			// Use token if available, otherwise use pending_id
+			// SendGrid API returns token field, not pending_id
 			if user.Token != "" {
 				return user.Token, RequestError{StatusCode: http.StatusOK, Err: nil}
 			}
+			// Fallback to pending_id if token is empty (though this seems unlikely based on API response)
 			if user.PendingID != "" {
 				return user.PendingID, RequestError{StatusCode: http.StatusOK, Err: nil}
 			}
