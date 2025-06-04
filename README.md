@@ -1,6 +1,4 @@
-# Terraform Provider for SendGrid (Unofficial)
-
-> **⚠️ This is an UNOFFICIAL SendGrid Terraform provider maintained by the community. It is not affiliated with, endorsed, or supported by SendGrid or Twilio.**
+# Terraform Provider for SendGrid
 
 [![Build Status](https://github.com/arslanbekov/terraform-provider-sendgrid/workflows/Tests/badge.svg)](https://github.com/arslanbekov/terraform-provider-sendgrid/actions)
 [![Go Report Card](https://goreportcard.com/badge/github.com/arslanbekov/terraform-provider-sendgrid)](https://goreportcard.com/report/github.com/arslanbekov/terraform-provider-sendgrid)
@@ -153,8 +151,8 @@ All resources include **built-in rate limiting protection** and **comprehensive 
 terraform {
   required_providers {
     sendgrid = {
-      source  = "anna-money/sendgrid"
-      version = "~> 1.0"
+      source  = "arslanbekov/sendgrid"
+      version = "~> 2.0"
     }
   }
 }
@@ -335,6 +333,29 @@ terraform apply
 ```
 
 ## Usage Examples
+
+> 💡 **Complete Examples Available**: See the [`examples/`](examples/) directory for comprehensive examples of all 12 resources including advanced configurations, import scripts, and real-world scenarios.
+
+### Quick Start Example
+
+```hcl
+# Basic SendGrid setup
+resource "sendgrid_api_key" "app" {
+  name   = "my-application"
+  scopes = ["mail.send"]
+}
+
+resource "sendgrid_template" "welcome" {
+  name       = "Welcome Email"
+  generation = "dynamic"
+}
+
+resource "sendgrid_teammate" "developer" {
+  email    = "dev@company.com"
+  is_admin = false
+  scopes   = ["templates.read", "mail.send"]
+}
+```
 
 ### Complete Email Workflow
 
@@ -524,8 +545,27 @@ terraform apply -parallelism=2
 ## Documentation
 
 - **[Troubleshooting Guide](docs/troubleshooting.md)** - Comprehensive error resolution guide
-- **[Rate Limiting Guide](docs/rate_limiting.md)** - How to handle API rate limits
-- **[Examples](examples/)** - Complete configuration examples
+- **[Examples](examples/)** - **Complete collection of examples for all 12 resources** with real-world scenarios
+- **[Resource Documentation](docs/resources/)** - Detailed resource reference
+- **[Data Source Documentation](docs/data-sources/)** - Data source reference
+
+### Examples Overview
+
+The [`examples/`](examples/) directory contains:
+
+- ✅ **All 12 resources covered** with working configurations
+- ✅ **Import scripts** for existing SendGrid resources
+- ✅ **Multiple scenarios** per resource (basic, advanced, production)
+- ✅ **Real-world use cases** with proper variable usage
+- ✅ **Best practices** and common patterns
+
+**Quick Example Navigation:**
+
+- [Teammate Management](examples/resources/sendgrid_teammate/) - User creation with SSO, admin, marketing roles
+- [API Key Management](examples/resources/sendgrid_api_key/) - Full permissions, read-only, service keys
+- [Templates](examples/resources/sendgrid_template/) - Dynamic and legacy templates
+- [Domain Setup](examples/resources/sendgrid_domain_authentication/) - Authentication and branding
+- [Webhooks](examples/resources/sendgrid_event_webhook/) - Event tracking and parsing
 
 ## Supported Resources
 
