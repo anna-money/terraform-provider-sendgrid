@@ -1,0 +1,3 @@
+provider_name = "sendgrid"
+rendered_provider_name = "SendGrid provider"
+rendered_website_dir = "docs"

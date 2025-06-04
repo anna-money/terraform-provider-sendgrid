@@ -298,3 +298,131 @@ This project is licensed under the **Mozilla Public License 2.0**. See [LICENSE]
 ---
 
 **Disclaimer:** This is an unofficial provider created and maintained by the community. While it offers enhanced features and comprehensive testing, use in production environments should be thoroughly evaluated based on your specific requirements.
+
+## Enhanced Error Handling
+
+This provider features improved error handling to help you quickly resolve common issues:
+
+### Scope Validation
+
+- **Automatic validation** of SendGrid scopes before API calls
+- **Clear error messages** for invalid or unsupported scopes
+- **Prevention** of automatic scope conflicts (`2fa_exempt`, `2fa_required`)
+
+### Better Error Messages
+
+When you encounter errors, the provider now provides:
+
+- **Root cause analysis** with possible solutions
+- **Plan-specific guidance** (Free vs Pro vs Marketing plans)
+- **Actionable next steps** for resolution
+
+### Examples of Improved Error Messages
+
+**Before:**
+
+```
+Error: request failed: api response: HTTP 400: {"errors":[{"message":"invalid or unassignable scopes were given","field":"scopes"}]}
+```
+
+**After:**
+
+```
+Error: Invalid or unassignable scopes provided. This can happen when:
+1. Using invalid scope names (check SendGrid API documentation)
+2. Your SendGrid plan doesn't support certain scopes
+3. Including automatically managed scopes like '2fa_exempt' or '2fa_required'
+
+Tip: Run 'terraform plan' first to validate your configuration.
+
+Original error: request failed: api response: HTTP 400: {"errors":[{"message":"invalid or unassignable scopes were given","field":"scopes"}]}
+```
+
+## Troubleshooting
+
+### Common Issues and Solutions
+
+1. **Invalid Scopes Error**: Check the [troubleshooting guide](docs/troubleshooting.md) for valid scope lists
+2. **Rate Limiting**: Use `terraform apply -parallelism=2` for bulk operations
+3. **Operation Cancellation**: Run `terraform refresh` after interrupting operations
+4. **Plan Limitations**: Verify your SendGrid plan supports the features you're using
+
+### Best Practices
+
+1. **Always validate first**: `terraform plan` before `terraform apply`
+2. **Use timeouts**: Especially for bulk teammate creation
+3. **Lower parallelism**: For rate-limit sensitive operations
+4. **Check scope validity**: Use only documented SendGrid scopes
+
+```bash
+# Recommended workflow
+terraform validate
+terraform plan
+terraform apply -parallelism=2
+```
+
+## Documentation
+
+- **[Troubleshooting Guide](docs/troubleshooting.md)** - Comprehensive error resolution guide
+- **[Rate Limiting Guide](docs/rate_limiting.md)** - How to handle API rate limits
+- **[Examples](examples/)** - Complete configuration examples
+
+## Supported Resources
+
+- **sendgrid_teammate** - Team member management with enhanced validation
+- **sendgrid_api_key** - API key management
+- **sendgrid_template** - Email template management
+- **sendgrid_subuser** - Subuser management
+- **sendgrid_domain_authentication** - Domain authentication
+- **sendgrid_link_branding** - Link branding
+- **sendgrid_parse_webhook** - Parse webhook configuration
+- **sendgrid_event_webhook** - Event webhook configuration
+- **sendgrid_unsubscribe_group** - Unsubscribe group management
+- **sendgrid_sso_integration** - SSO integration
+- **sendgrid_sso_certificate** - SSO certificate management
+
+## Environment Variables
+
+```bash
+export SENDGRID_API_KEY="your-sendgrid-api-key"
+export TF_LOG=INFO  # For debugging
+```
+
+## Rate Limiting
+
+The provider automatically handles SendGrid API rate limits with exponential backoff. For bulk operations:
+
+```bash
+# Reduced parallelism for rate-sensitive operations
+terraform apply -parallelism=1
+
+# Increase timeouts in configuration
+resource "sendgrid_teammate" "example" {
+  # ... configuration ...
+
+  timeouts {
+    create = "30m"
+    update = "30m"
+    delete = "30m"
+  }
+}
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes with tests
+4. Submit a pull request
+
+## License
+
+This project is licensed under the MIT License.
+
+## Support
+
+- **Issues**: [GitHub Issues](https://github.com/anna-money/terraform-provider-sendgrid/issues)
+- **Documentation**: See `docs/` directory
+- **Examples**: See `examples/` directory
+
+For urgent issues with production systems, check the [troubleshooting guide](docs/troubleshooting.md) first.
