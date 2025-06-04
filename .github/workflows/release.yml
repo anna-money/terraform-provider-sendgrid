@@ -24,13 +24,12 @@ jobs:
         with:
           go-version: 1.21
 
-      - name: Decode and Import GPG key
+      - name: Import GPG key
         id: import_gpg
-        run: |
-          echo "${{ secrets.GPG_PRIVATE_KEY }}" | base64 -d > /tmp/private.key
-          gpg --batch --import /tmp/private.key
-          rm /tmp/private.key
-          echo "fingerprint=$(gpg --list-secret-keys --keyid-format LONG | grep 'sec' | head -n1 | awk '{print $2}' | cut -d'/' -f2)" >> $GITHUB_OUTPUT
+        uses: crazy-max/ghaction-import-gpg@v6.3.0
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.PASSPHRASE }}
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6.3.0
