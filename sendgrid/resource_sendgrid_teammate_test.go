@@ -104,6 +104,39 @@ func TestAccSendgridTeammate_automaticScopes(t *testing.T) {
 	})
 }
 
+func TestAccSendgridTeammatePendingUser(t *testing.T) {
+	email := "terraform-teammate-pending-test-" + acctest.RandString(10) + "@example.com"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckSendgridTeammateDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccCheckSendgridTeammateConfigBasic(email),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckSendgridTeammateExists("sendgrid_teammate.test"),
+					resource.TestCheckResourceAttr("sendgrid_teammate.test", "email", email),
+					resource.TestCheckResourceAttr("sendgrid_teammate.test", "is_admin", "false"),
+					resource.TestCheckResourceAttr("sendgrid_teammate.test", "is_sso", "false"),
+					// For non-SSO users, status should be pending initially
+					resource.TestCheckResourceAttr("sendgrid_teammate.test", "user_status", "pending"),
+				),
+			},
+			// Test that we can update a pending user
+			{
+				Config: testAccCheckSendgridTeammateConfigWithScopes(email),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckSendgridTeammateExists("sendgrid_teammate.test"),
+					resource.TestCheckResourceAttr("sendgrid_teammate.test", "email", email),
+					resource.TestCheckResourceAttr("sendgrid_teammate.test", "user_status", "pending"),
+					resource.TestCheckResourceAttr("sendgrid_teammate.test", "scopes.#", "3"),
+				),
+			},
+		},
+	})
+}
+
 func testAccCheckSendgridTeammateDestroy(s *terraform.State) error {
 	c := testAccProvider.Meta().(*sendgrid.Client)
 

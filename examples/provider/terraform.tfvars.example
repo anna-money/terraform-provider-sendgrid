@@ -1,0 +1,66 @@
+# SendGrid Provider Configuration Examples
+# Copy this file to terraform.tfvars and update with your values
+# IMPORTANT: Add terraform.tfvars to your .gitignore file!
+
+# =============================================================================
+# BASIC CONFIGURATION
+# =============================================================================
+
+# Your SendGrid API Key
+# Get this from: https://app.sendgrid.com/settings/api_keys
+sendgrid_api_key = "SG.your-actual-sendgrid-api-key-here"
+
+# =============================================================================
+# MULTI-ENVIRONMENT CONFIGURATION
+# =============================================================================
+
+# Current environment
+environment = "dev"  # Options: dev, staging, prod
+
+# API keys for different environments
+sendgrid_api_keys = {
+  dev     = "SG.development-api-key-here"
+  staging = "SG.staging-api-key-here"
+  prod    = "SG.production-api-key-here"
+}
+
+# =============================================================================
+# TEAMMATE MANAGEMENT EXAMPLES
+# =============================================================================
+
+# List of teammates to create
+teammates = {
+  "developer" = {
+    email  = "dev@example.com"
+    scopes = ["mail.send", "templates.read"]
+  }
+  "marketing" = {
+    email  = "marketing@example.com"
+    scopes = ["mail.send", "templates.read", "templates.create", "stats.read"]
+  }
+  "admin" = {
+    email    = "admin@example.com"
+    is_admin = true
+    scopes   = []  # Admin doesn't need specific scopes
+  }
+}
+
+# =============================================================================
+# SECURITY NOTES
+# =============================================================================
+
+# 1. Never commit this file to version control
+# 2. Add terraform.tfvars to your .gitignore:
+#    echo "terraform.tfvars" >> .gitignore
+# 3. Use different API keys for different environments
+# 4. Regularly rotate your API keys
+# 5. Use minimal required scopes for each API key
+
+# =============================================================================
+# ALTERNATIVE: Environment Variables (More Secure)
+# =============================================================================
+
+# Instead of using this file, you can set environment variables:
+# export SENDGRID_API_KEY="SG.your-api-key-here"
+# export TF_VAR_sendgrid_api_key="SG.your-api-key-here"
+# export TF_VAR_environment="prod"
