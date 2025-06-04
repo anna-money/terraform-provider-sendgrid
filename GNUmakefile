@@ -14,6 +14,24 @@ test: fmtcheck
 testacc: fmtcheck
 	TF_ACC=1 go test ./$(PKG_NAME) -v $(TESTARGS) -timeout 1m
 
+# Coverage targets
+test-coverage: fmtcheck
+	@echo "==> Running unit tests with coverage..."
+	@go test ./$(PKG_NAME) -run '^TestProvider' -timeout=30s -coverprofile=coverage.txt -covermode=atomic
+
+testacc-coverage: fmtcheck
+	@echo "==> Running acceptance tests with coverage..."
+	TF_ACC=1 go test ./$(PKG_NAME) -run '^TestAcc' -timeout=30m -parallel=1 -coverprofile=coverage-acceptance.txt -covermode=atomic
+
+coverage-report: test-coverage
+	@echo "==> Generating coverage report..."
+	@go tool cover -html=coverage.txt -o coverage.html
+	@echo "Coverage report generated: coverage.html"
+
+coverage-total: test-coverage
+	@echo "==> Total coverage:"
+	@go tool cover -func=coverage.txt | grep total
+
 fmt:
 	@echo "==> Fixing source code with gofmt..."
 	gofmt -s -w ./$(PKG_NAME)
@@ -44,4 +62,8 @@ docs: doc
 release:
 	goreleaser release --rm-dist
 
-.PHONY: build test testacc fmt fmtcheck lint golangci-lint sweep test-release doc docs release
+clean-coverage:
+	@echo "==> Cleaning coverage files..."
+	@rm -f coverage.txt coverage-acceptance.txt coverage.html
+
+.PHONY: build test testacc test-coverage testacc-coverage coverage-report coverage-total fmt fmtcheck lint golangci-lint sweep test-release doc docs release clean-coverage
