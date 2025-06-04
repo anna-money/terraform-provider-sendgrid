@@ -102,7 +102,7 @@ go test -c ./sendgrid/ -o /dev/null
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/anna-money/terraform-provider-sendgrid
+git clone https://github.com/arslanbekov/terraform-provider-sendgrid
 cd terraform-provider-sendgrid
 
 # 2. Install dependencies

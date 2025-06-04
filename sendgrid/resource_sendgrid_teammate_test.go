@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"testing"
 
-	sendgrid "github.com/anna-money/terraform-provider-sendgrid/sdk"
+	sendgrid "github.com/arslanbekov/terraform-provider-sendgrid/sdk"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"

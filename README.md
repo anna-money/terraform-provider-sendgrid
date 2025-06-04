@@ -2,9 +2,9 @@
 
 > **⚠️ This is an UNOFFICIAL SendGrid Terraform provider maintained by the community. It is not affiliated with, endorsed, or supported by SendGrid or Twilio.**
 
-[![Build Status](https://github.com/anna-money/terraform-provider-sendgrid/workflows/Tests/badge.svg)](https://github.com/anna-money/terraform-provider-sendgrid/actions)
-[![Go Report Card](https://goreportcard.com/badge/github.com/anna-money/terraform-provider-sendgrid)](https://goreportcard.com/report/github.com/anna-money/terraform-provider-sendgrid)
-[![codecov](https://codecov.io/gh/anna-money/terraform-provider-sendgrid/branch/main/graph/badge.svg)](https://codecov.io/gh/anna-money/terraform-provider-sendgrid)
+[![Build Status](https://github.com/arslanbekov/terraform-provider-sendgrid/workflows/Tests/badge.svg)](https://github.com/arslanbekov/terraform-provider-sendgrid/actions)
+[![Go Report Card](https://goreportcard.com/badge/github.com/arslanbekov/terraform-provider-sendgrid)](https://goreportcard.com/report/github.com/arslanbekov/terraform-provider-sendgrid)
+[![codecov](https://codecov.io/gh/arslanbekov/terraform-provider-sendgrid/branch/main/graph/badge.svg)](https://codecov.io/gh/arslanbekov/terraform-provider-sendgrid)
 
 A comprehensive Terraform provider for managing SendGrid resources with **enterprise-grade features** and **near 100% test coverage**.
 
@@ -149,7 +149,7 @@ terraform {
 
 ```bash
 # Download the latest release for your platform
-wget https://github.com/anna-money/terraform-provider-sendgrid/releases/latest/download/terraform-provider-sendgrid_linux_amd64.zip
+wget https://github.com/arslanbekov/terraform-provider-sendgrid/releases/latest/download/terraform-provider-sendgrid_linux_amd64.zip
 
 # Extract and install
 unzip terraform-provider-sendgrid_linux_amd64.zip
@@ -291,8 +291,8 @@ This project is licensed under the **Mozilla Public License 2.0**. See [LICENSE]
 
 ## Support & Community
 
-- **GitHub Issues:** [Report bugs and request features](https://github.com/anna-money/terraform-provider-sendgrid/issues)
-- **Discussions:** [Community discussions and Q&A](https://github.com/anna-money/terraform-provider-sendgrid/discussions)
+- **GitHub Issues:** [Report bugs and request features](https://github.com/arslanbekov/terraform-provider-sendgrid/issues)
+- **Discussions:** [Community discussions and Q&A](https://github.com/arslanbekov/terraform-provider-sendgrid/discussions)
 - **Documentation:** [Full documentation](./docs/)
 
 ---
@@ -421,7 +421,7 @@ This project is licensed under the MIT License.
 
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/anna-money/terraform-provider-sendgrid/issues)
+- **Issues**: [GitHub Issues](https://github.com/arslanbekov/terraform-provider-sendgrid/issues)
 - **Documentation**: See `docs/` directory
 - **Examples**: See `examples/` directory
 

@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"strings"
 
-	sendgrid "github.com/anna-money/terraform-provider-sendgrid/sdk"
+	sendgrid "github.com/arslanbekov/terraform-provider-sendgrid/sdk"
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
