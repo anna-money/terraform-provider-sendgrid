@@ -294,7 +294,7 @@ func (c *Client) ReadPendingUser(ctx context.Context, email string) (*User, Requ
 
 	return nil, RequestError{
 		StatusCode: http.StatusNotFound,
-		Err:        fmt.Errorf("username with email %s not found", email),
+		Err:        fmt.Errorf("pending user with email %s not found", email),
 	}
 }
 
