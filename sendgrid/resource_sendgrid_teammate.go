@@ -443,11 +443,20 @@ func sanitizeScopes(scopes []string) []string {
 // suppressDiffForPendingUsers suppresses diff for fields that are not available for pending users
 func suppressDiffForPendingUsers(k, old, new string, d *schema.ResourceData) bool {
 	userStatus := d.Get("user_status").(string)
+	isSSO := d.Get("is_sso").(bool)
+
+	// For pending users, suppress diff if old value is empty and new value is set
+	// This prevents Terraform from showing changes for fields that can't be set until user accepts invitation
 	if userStatus == "pending" {
-		// For pending users, suppress diff if old value is empty and new value is set
-		// This prevents Terraform from showing changes for fields that can't be set until user accepts invitation
 		return old == "" && new != ""
 	}
+
+	// For non-SSO users, first_name and last_name are not supported by SendGrid API
+	// Suppress diff for these fields if user is not SSO
+	if !isSSO && (k == "first_name" || k == "last_name") {
+		return old == "" && new != ""
+	}
+
 	return false
 }
 
