@@ -4,7 +4,7 @@ subcategory: ""
 description: |-
   Manages a SendGrid teammate. Teammates are team members who have access to your SendGrid account with specific permissions.
   Important Notes:
-  Admin teammates have full access and don't need scopesScopes '2fa_exempt' and '2fa_required' are set automatically by SendGridSome scopes require specific SendGrid plans (Pro+, Marketing plans, etc.)Use timeouts for better reliability with rate limitingFor non-SSO teammates, SendGrid sends an invitation email. The teammate will have 'pending' status until they accept the invitation.
+  Admin teammates have full access and don't need scopesScopes '2fa_exempt' and '2fa_required' are set automatically by SendGridSome scopes require specific SendGrid plans (Pro+, Marketing plans, etc.)Use timeouts for better reliability with rate limiting
 ---
 
 # sendgrid_teammate (Resource)
@@ -17,15 +17,6 @@ Manages a SendGrid teammate. Teammates are team members who have access to your 
 - Scopes '2fa_exempt' and '2fa_required' are set automatically by SendGrid
 - Some scopes require specific SendGrid plans (Pro+, Marketing plans, etc.)
 - Use timeouts for better reliability with rate limiting
-- **For non-SSO teammates, SendGrid sends an invitation email. The teammate will have 'pending' status until they accept the invitation.**
-
-## Pending User Behavior
-
-When creating a non-SSO teammate, SendGrid sends an invitation email to the specified address. The teammate resource will be created successfully, but the user will have a `user_status` of "pending" until they accept the invitation. This is normal behavior and allows Terraform to manage the invitation lifecycle properly.
-
-- **SSO users**: Created immediately with "active" status
-- **Non-SSO users**: Created with "pending" status, become "active" after accepting invitation
-- **Terraform operations**: Work correctly for both pending and active users
 
 ## Example Usage
 
