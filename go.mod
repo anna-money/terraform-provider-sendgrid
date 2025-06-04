@@ -1,6 +1,8 @@
 module github.com/anna-money/terraform-provider-sendgrid
 
-go 1.19
+go 1.21
+
+toolchain go1.24.3
 
 require (
 	github.com/hashicorp/go-multierror v1.1.1
