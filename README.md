@@ -9,10 +9,9 @@ A comprehensive Terraform provider for managing SendGrid resources.
 ## Key Features
 
 - **Advanced Rate Limiting** - Built-in exponential backoff and retry logic
-- **Teammate Management** - Complete lifecycle management including pending invitations
+- **Teammate Management** - Complete lifecycle management, including pending invitations
 - **Template Management** - Full template and version control
 - **Multiple Auth Methods** - Environment variables, Terraform variables, and more
-- **95% Test Coverage** - Production-ready with comprehensive testing
 - **Rich Documentation** - Extensive examples and troubleshooting guides
 
 ## Quick Start
