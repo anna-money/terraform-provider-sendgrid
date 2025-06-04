@@ -1,8 +1,29 @@
 # Terraform Provider for Sendgrid
 
-##  Usage
+## Usage
 
 Detailed documentation is available on the [Terraform provider registry](https://registry.terraform.io/providers/anna-money/sendgrid/latest).
+
+## Features
+
+### Rate Limiting Support
+
+This provider includes comprehensive rate limiting support for all SendGrid resources. When the SendGrid API returns HTTP 429 "too many requests" errors, the provider automatically retries with exponential backoff.
+
+**Key features:**
+
+- Automatic retry on HTTP 429 errors
+- Exponential backoff strategy
+- Configurable timeouts per resource
+- Support for all SendGrid resources
+
+For detailed information, see [Rate Limiting Documentation](docs/rate_limiting.md).
+
+**Quick tips:**
+
+- Use `-parallelism=1` for API key creation to avoid rate limits
+- Configure custom timeouts for operations that may need more retry time
+- Monitor SendGrid API usage in your dashboard
 
 ## Build
 
