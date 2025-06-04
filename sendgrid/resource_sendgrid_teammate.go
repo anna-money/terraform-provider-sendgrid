@@ -326,14 +326,16 @@ func resourceSendgridTeammate() *schema.Resource {
 				Required:    true,
 			},
 			"first_name": {
-				Type:        schema.TypeString,
-				Description: "The first name of the teammate. Required for SSO users.",
-				Optional:    true,
+				Type:             schema.TypeString,
+				Description:      "The first name of the teammate. Required for SSO users.",
+				Optional:         true,
+				DiffSuppressFunc: suppressDiffForPendingUsers,
 			},
 			"last_name": {
-				Type:        schema.TypeString,
-				Description: "The last name of the teammate. Required for SSO users.",
-				Optional:    true,
+				Type:             schema.TypeString,
+				Description:      "The last name of the teammate. Required for SSO users.",
+				Optional:         true,
+				DiffSuppressFunc: suppressDiffForPendingUsers,
 			},
 			"is_admin": {
 				Type:        schema.TypeBool,
@@ -360,9 +362,10 @@ func resourceSendgridTeammate() *schema.Resource {
 				},
 			},
 			"username": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "The username for the teammate. If not provided, the email will be used.",
+				Type:             schema.TypeString,
+				Optional:         true,
+				Description:      "The username for the teammate. If not provided, the email will be used.",
+				DiffSuppressFunc: suppressDiffForPendingUsers,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
@@ -435,6 +438,17 @@ func sanitizeScopes(scopes []string) []string {
 		}
 	}
 	return sanitized
+}
+
+// suppressDiffForPendingUsers suppresses diff for fields that are not available for pending users
+func suppressDiffForPendingUsers(k, old, new string, d *schema.ResourceData) bool {
+	userStatus := d.Get("user_status").(string)
+	if userStatus == "pending" {
+		// For pending users, suppress diff if old value is empty and new value is set
+		// This prevents Terraform from showing changes for fields that can't be set until user accepts invitation
+		return old == "" && new != ""
+	}
+	return false
 }
 
 // enhancedRetryOnScopeErrors wraps the standard retry function with enhanced error handling for scope-related errors
@@ -554,15 +568,27 @@ func resourceSendgridTeammateRead(ctx context.Context, d *schema.ResourceData, m
 	}
 
 	d.SetId(teammate.Email)
+
+	// For pending users, only set fields that are available from the API
+	// Pending users don't have username, first_name, last_name until they accept invitation
 	retErr := multierror.Append(
 		d.Set("email", teammate.Email),
-		d.Set("username", teammate.Username),
-		d.Set("first_name", teammate.FirstName),
-		d.Set("last_name", teammate.LastName),
 		d.Set("scopes", filteredScopes),
 		d.Set("is_admin", teammate.IsAdmin),
 		d.Set("user_status", userStatus),
 	)
+
+	// Only set these fields for active users or if they have values
+	if userStatus == "active" || teammate.Username != "" {
+		retErr = multierror.Append(retErr, d.Set("username", teammate.Username))
+	}
+	if userStatus == "active" || teammate.FirstName != "" {
+		retErr = multierror.Append(retErr, d.Set("first_name", teammate.FirstName))
+	}
+	if userStatus == "active" || teammate.LastName != "" {
+		retErr = multierror.Append(retErr, d.Set("last_name", teammate.LastName))
+	}
+
 	return diag.FromErr(retErr.ErrorOrNil())
 }
 
