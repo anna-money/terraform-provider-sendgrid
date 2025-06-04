@@ -66,7 +66,7 @@ terraform apply -parallelism=1
 
 ## Teammate Management
 
-Unique to this provider - complete teammate lifecycle management:
+Unique to this provider - complete teammate lifecycle management with **pending user support**:
 
 ```hcl
 # Create a teammate with specific scopes
@@ -87,11 +87,26 @@ resource "sendgrid_teammate" "marketing_user" {
   }
 }
 
+# Check teammate status (pending/active)
+output "teammate_status" {
+  value = sendgrid_teammate.marketing_user.user_status
+}
+
 # Reference teammate data
 data "sendgrid_teammate" "existing" {
   email = "existing@company.com"
 }
 ```
+
+### Pending User Behavior
+
+**Important:** For non-SSO teammates, SendGrid sends an invitation email. The teammate resource will be created successfully with `user_status = "pending"` until the user accepts the invitation.
+
+- **SSO users**: Created immediately with `user_status = "active"`
+- **Non-SSO users**: Created with `user_status = "pending"`, become "active" after accepting invitation
+- **Terraform operations**: Work correctly for both pending and active users (create, read, update, delete)
+
+This allows you to manage teammate invitations through Terraform without waiting for users to accept invitations.
 
 ## Available Resources
 
@@ -157,20 +172,165 @@ chmod +x ~/.terraform.d/plugins/terraform-provider-sendgrid
 
 ## Configuration
 
+The SendGrid provider supports multiple authentication methods for different use cases.
+
+### Method 1: Environment Variable (Recommended for Production)
+
+The most secure method - API key is never stored in code:
+
+```bash
+# Set environment variable
+export SENDGRID_API_KEY="SG.your-actual-sendgrid-api-key-here"
+```
+
 ```hcl
+terraform {
+  required_providers {
+    sendgrid = {
+      source  = "arslanbekov/sendgrid"
+      version = "~> 1.1"
+    }
+  }
+}
+
 provider "sendgrid" {
-  api_key = var.sendgrid_api_key  # or use SENDGRID_API_KEY env var
-  host    = "https://api.sendgrid.com"  # optional, defaults to official API
+  # API key automatically read from SENDGRID_API_KEY environment variable
 }
 ```
 
-### Authentication Methods
+### Method 2: Terraform Variables (Flexible)
 
-1. **API Key via Variable:** `api_key = var.sendgrid_api_key`
-2. **Environment Variable:** `export SENDGRID_API_KEY="your-api-key"`
-3. **Terraform Variable:** Define in `terraform.tfvars`
+Good for different environments and CI/CD pipelines:
 
-**Required API Key Scopes:** Ensure your API key has appropriate permissions for the resources you plan to manage.
+```hcl
+variable "sendgrid_api_key" {
+  description = "SendGrid API Key"
+  type        = string
+  sensitive   = true
+}
+
+provider "sendgrid" {
+  api_key = var.sendgrid_api_key
+}
+```
+
+**Usage options:**
+
+```bash
+# Option A: Command line
+terraform apply -var="sendgrid_api_key=SG.your-key-here"
+
+# Option B: terraform.tfvars file (add to .gitignore!)
+echo 'sendgrid_api_key = "SG.your-key-here"' > terraform.tfvars
+
+# Option C: Environment variable for Terraform
+export TF_VAR_sendgrid_api_key="SG.your-key-here"
+```
+
+### Method 3: Multiple Environments
+
+For managing different environments with separate API keys:
+
+```hcl
+variable "environment" {
+  description = "Environment (dev/staging/prod)"
+  type        = string
+  default     = "dev"
+}
+
+variable "sendgrid_api_keys" {
+  description = "SendGrid API keys per environment"
+  type        = map(string)
+  sensitive   = true
+  default = {
+    dev     = ""  # Set via terraform.tfvars or env vars
+    staging = ""
+    prod    = ""
+  }
+}
+
+provider "sendgrid" {
+  api_key = var.sendgrid_api_keys[var.environment]
+}
+```
+
+### Advanced Configuration
+
+```hcl
+provider "sendgrid" {
+  api_key = var.sendgrid_api_key
+  host    = "https://api.sendgrid.com"  # Optional: custom API endpoint
+}
+```
+
+### Security Best Practices
+
+✅ **DO:**
+
+- Use environment variables in production and CI/CD
+- Mark variables as `sensitive = true`
+- Add `terraform.tfvars` to `.gitignore`
+- Use different API keys for different environments
+- Rotate API keys regularly
+
+❌ **DON'T:**
+
+- Hardcode API keys in `.tf` files
+- Commit API keys to version control
+- Use production keys in development
+- Share API keys in plain text
+
+### Required API Key Scopes
+
+Ensure your SendGrid API key has appropriate permissions:
+
+```bash
+# Minimum scopes for basic teammate management:
+teammates.create
+teammates.read
+teammates.update
+teammates.delete
+
+# Additional scopes for full functionality:
+api_keys.create
+api_keys.read
+templates.create
+templates.read
+# ... see SendGrid documentation for complete list
+```
+
+### Quick Start Example
+
+```bash
+# 1. Set your API key
+export SENDGRID_API_KEY="SG.your-sendgrid-api-key-here"
+
+# 2. Create main.tf
+cat > main.tf << 'EOF'
+terraform {
+  required_providers {
+    sendgrid = {
+      source  = "arslanbekov/sendgrid"
+      version = "~> 1.1"
+    }
+  }
+}
+
+provider "sendgrid" {}
+
+resource "sendgrid_teammate" "example" {
+  email    = "teammate@example.com"
+  is_admin = false
+  is_sso   = false
+  scopes   = ["mail.send"]
+}
+EOF
+
+# 3. Initialize and apply
+terraform init
+terraform plan
+terraform apply
+```
 
 ## Usage Examples
 

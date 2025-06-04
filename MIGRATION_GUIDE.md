@@ -81,3 +81,61 @@ If you encounter any issues during migration:
 ## Backwards Compatibility
 
 The `anna-money/sendgrid` provider will remain available in Terraform Registry for existing users, but new features and bug fixes will only be available in `arslanbekov/sendgrid`.
+
+## Version 1.1.0 - Pending User Support
+
+### New Features
+
+#### Enhanced Teammate Management
+
+Added support for pending users in teammate management. This resolves the issue where non-SSO teammates would cause Terraform errors on subsequent runs.
+
+**New Field:**
+
+- `user_status` (computed) - Shows "pending" for users who haven't accepted invitations, "active" for confirmed users
+
+**Behavior Changes:**
+
+- Non-SSO teammates now properly handle the invitation workflow
+- Terraform operations (read, update, delete) work correctly for both pending and active users
+- No more "username with email not found" errors on subsequent terraform runs
+
+**Example:**
+
+```hcl
+resource "sendgrid_teammate" "example" {
+  email    = "user@example.com"
+  is_admin = false
+  is_sso   = false
+  scopes   = ["mail.send"]
+}
+
+# Check if user has accepted invitation
+output "user_status" {
+  value = sendgrid_teammate.example.user_status
+}
+```
+
+**Migration Required:** None - this is a backward-compatible enhancement.
+
+**Benefits:**
+
+- Eliminates errors when managing non-SSO teammates
+- Provides visibility into invitation status
+- Allows proper lifecycle management of pending invitations
+
+### Technical Details
+
+The provider now:
+
+1. Checks active teammates first
+2. Falls back to pending invitations if user not found in active list
+3. Supports updates and deletes for both pending and active users
+4. Provides clear status indication through `user_status` field
+
+This resolves the common issue where Terraform would fail on the second run with:
+
+```
+Error: request failed: resource not found. It may have been deleted outside of Terraform or the ID is incorrect
+Original error: username with email user@example.com not found
+```

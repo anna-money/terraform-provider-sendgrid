@@ -125,6 +125,10 @@ func (c *Client) CreateSSOUser(ctx context.Context, firstName, lastName, email s
 func (c *Client) ReadUser(ctx context.Context, email string) (*User, RequestError) {
 	username, requestErr := c.GetUsernameByEmail(ctx, email)
 	if requestErr.Err != nil {
+		// If user not found in active teammates, check pending invitations
+		if requestErr.StatusCode == http.StatusNotFound {
+			return c.ReadPendingUser(ctx, email)
+		}
 		return nil, requestErr
 	}
 
@@ -150,6 +154,10 @@ func (c *Client) ReadUser(ctx context.Context, email string) (*User, RequestErro
 func (c *Client) UpdateUser(ctx context.Context, email string, scopes []string, isAdmin bool) (*User, RequestError) {
 	username, requestErr := c.GetUsernameByEmail(ctx, email)
 	if requestErr.Err != nil {
+		// If user not found in active teammates, check if it's a pending user
+		if requestErr.StatusCode == http.StatusNotFound {
+			return c.UpdatePendingUser(ctx, email, scopes, isAdmin)
+		}
 		return nil, requestErr
 	}
 
@@ -170,6 +178,10 @@ func (c *Client) UpdateUser(ctx context.Context, email string, scopes []string, 
 func (c *Client) UpdateSSOUser(ctx context.Context, firstName, lastName, email string, scopes []string, isAdmin bool) (*User, RequestError) {
 	username, requestErr := c.GetUsernameByEmail(ctx, email)
 	if requestErr.Err != nil {
+		// If user not found in active teammates, check if it's a pending user
+		if requestErr.StatusCode == http.StatusNotFound {
+			return c.UpdateSSOPendingUser(ctx, firstName, lastName, email, scopes, isAdmin)
+		}
 		return nil, requestErr
 	}
 
@@ -244,4 +256,90 @@ func (c *Client) GetPendingUserToken(ctx context.Context, email string) (string,
 		StatusCode: http.StatusNotFound,
 		Err:        fmt.Errorf("pending user with email %s not found", email),
 	}
+}
+
+// ReadPendingUser reads a pending user invitation by email
+func (c *Client) ReadPendingUser(ctx context.Context, email string) (*User, RequestError) {
+	respBody, statusCode, err := c.Get(ctx, "GET", "/teammates/pending")
+	if err != nil {
+		return nil, RequestError{
+			StatusCode: statusCode,
+			Err:        err,
+		}
+	}
+
+	pendingUsers := &PendingUser{}
+	decoder := json.NewDecoder(bytes.NewReader([]byte(respBody)))
+	err = decoder.Decode(pendingUsers)
+	if err != nil {
+		return nil, RequestError{
+			StatusCode: http.StatusInternalServerError,
+			Err:        err,
+		}
+	}
+
+	for _, pendingUser := range pendingUsers.Result {
+		if pendingUser.Email == email {
+			// Convert pending user to User struct
+			user := &User{
+				Email:   pendingUser.Email,
+				IsAdmin: pendingUser.IsAdmin,
+				Scopes:  pendingUser.Scopes,
+				// Mark as pending by setting a special user type
+				UserType: "pending",
+			}
+			return user, RequestError{StatusCode: http.StatusOK, Err: nil}
+		}
+	}
+
+	return nil, RequestError{
+		StatusCode: http.StatusNotFound,
+		Err:        fmt.Errorf("pending user with email %s not found", email),
+	}
+}
+
+// UpdatePendingUser updates a pending user invitation
+func (c *Client) UpdatePendingUser(ctx context.Context, email string, scopes []string, isAdmin bool) (*User, RequestError) {
+	token, requestErr := c.GetPendingUserToken(ctx, email)
+	if requestErr.Err != nil {
+		return nil, requestErr
+	}
+
+	_, statusCode, err := c.Post(ctx, "PATCH", "/teammates/pending/"+token, User{
+		IsAdmin: isAdmin,
+		Scopes:  scopes,
+	})
+	if err != nil {
+		return nil, RequestError{
+			StatusCode: statusCode,
+			Err:        err,
+		}
+	}
+
+	// After update, return the updated pending user
+	return c.ReadPendingUser(ctx, email)
+}
+
+// UpdateSSOPendingUser updates a pending SSO user invitation
+func (c *Client) UpdateSSOPendingUser(ctx context.Context, firstName, lastName, email string, scopes []string, isAdmin bool) (*User, RequestError) {
+	token, requestErr := c.GetPendingUserToken(ctx, email)
+	if requestErr.Err != nil {
+		return nil, requestErr
+	}
+
+	_, statusCode, err := c.Post(ctx, "PATCH", "/sso/teammates/pending/"+token, User{
+		FirstName: firstName,
+		LastName:  lastName,
+		IsAdmin:   isAdmin,
+		Scopes:    scopes,
+	})
+	if err != nil {
+		return nil, RequestError{
+			StatusCode: statusCode,
+			Err:        err,
+		}
+	}
+
+	// After update, return the updated pending user
+	return c.ReadPendingUser(ctx, email)
 }

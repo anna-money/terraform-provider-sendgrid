@@ -365,6 +365,11 @@ func resourceSendgridTeammate() *schema.Resource {
 					Type: schema.TypeString,
 				},
 			},
+			"user_status": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The status of the user: 'active' for confirmed users, 'pending' for users who haven't accepted their invitation yet.",
+			},
 		},
 	}
 }
@@ -537,6 +542,12 @@ func resourceSendgridTeammateRead(ctx context.Context, d *schema.ResourceData, m
 		}
 	}
 
+	// Determine user status based on UserType
+	userStatus := "active"
+	if teammate.UserType == "pending" {
+		userStatus = "pending"
+	}
+
 	d.SetId(teammate.Email)
 	retErr := multierror.Append(
 		d.Set("email", teammate.Email),
@@ -545,6 +556,7 @@ func resourceSendgridTeammateRead(ctx context.Context, d *schema.ResourceData, m
 		d.Set("last_name", teammate.LastName),
 		d.Set("scopes", filteredScopes),
 		d.Set("is_admin", teammate.IsAdmin),
+		d.Set("user_status", userStatus),
 	)
 	return diag.FromErr(retErr.ErrorOrNil())
 }
