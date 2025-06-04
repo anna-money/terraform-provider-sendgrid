@@ -34,6 +34,7 @@ type Users struct {
 
 type PendingUser struct {
 	Result []struct {
+		PendingID      string   `json:"pending_id,omitempty"`
 		Token          string   `json:"token,omitempty"`
 		Email          string   `json:"email,omitempty"`
 		IsAdmin        bool     `json:"is_admin,omitempty"`
@@ -127,7 +128,15 @@ func (c *Client) ReadUser(ctx context.Context, email string) (*User, RequestErro
 	if requestErr.Err != nil {
 		// If user not found in active teammates, check pending invitations
 		if requestErr.StatusCode == http.StatusNotFound {
-			return c.ReadPendingUser(ctx, email)
+			pendingUser, pendingErr := c.ReadPendingUser(ctx, email)
+			if pendingErr.Err != nil {
+				// User not found in either active or pending
+				return nil, RequestError{
+					StatusCode: http.StatusNotFound,
+					Err:        fmt.Errorf("user with email %s not found in active teammates or pending invitations. Original active error: %v. Pending error: %v", email, requestErr.Err, pendingErr.Err),
+				}
+			}
+			return pendingUser, RequestError{StatusCode: http.StatusOK, Err: nil}
 		}
 		return nil, requestErr
 	}
@@ -249,7 +258,13 @@ func (c *Client) GetPendingUserToken(ctx context.Context, email string) (string,
 
 	for _, user := range pendingUsers.Result {
 		if user.Email == email {
-			return user.Token, RequestError{StatusCode: http.StatusOK, Err: nil}
+			// Use token if available, otherwise use pending_id
+			if user.Token != "" {
+				return user.Token, RequestError{StatusCode: http.StatusOK, Err: nil}
+			}
+			if user.PendingID != "" {
+				return user.PendingID, RequestError{StatusCode: http.StatusOK, Err: nil}
+			}
 		}
 	}
 	return "", RequestError{
@@ -264,7 +279,7 @@ func (c *Client) ReadPendingUser(ctx context.Context, email string) (*User, Requ
 	if err != nil {
 		return nil, RequestError{
 			StatusCode: statusCode,
-			Err:        err,
+			Err:        fmt.Errorf("failed to get pending users: %w", err),
 		}
 	}
 
@@ -274,11 +289,17 @@ func (c *Client) ReadPendingUser(ctx context.Context, email string) (*User, Requ
 	if err != nil {
 		return nil, RequestError{
 			StatusCode: http.StatusInternalServerError,
-			Err:        err,
+			Err:        fmt.Errorf("failed to decode pending users response: %w", err),
 		}
 	}
 
+	// Debug: log all pending users with more details
+	var pendingDetails []string
 	for _, pendingUser := range pendingUsers.Result {
+		detail := fmt.Sprintf("email=%s, pending_id=%s, token=%s, expiration=%d",
+			pendingUser.Email, pendingUser.PendingID, pendingUser.Token, pendingUser.ExpirationDate)
+		pendingDetails = append(pendingDetails, detail)
+
 		if pendingUser.Email == email {
 			// Convert pending user to User struct
 			user := &User{
@@ -294,7 +315,7 @@ func (c *Client) ReadPendingUser(ctx context.Context, email string) (*User, Requ
 
 	return nil, RequestError{
 		StatusCode: http.StatusNotFound,
-		Err:        fmt.Errorf("pending user with email %s not found", email),
+		Err:        fmt.Errorf("pending user with email %s not found. Available pending users: %v. This may mean the user has already accepted the invitation or the invitation has expired", email, pendingDetails),
 	}
 }
 
