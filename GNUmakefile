@@ -1,6 +1,6 @@
 TEST?=$$(go list ./... | grep -v /sdk$$)
 GOFMT_FILES?=$$(find . -name '*.go')
-PGK_NAME=sendgrid
+PKG_NAME=sendgrid
 
 default: build
 
@@ -37,9 +37,11 @@ test-release:
 	goreleaser --snapshot --skip-publish --rm-dist
 
 doc:
-	tfplugindocs generate --rendered-provider-name 'SendGrid provider' --provider-name anna-money/sendgrid
+	tfplugindocs generate --rendered-provider-name 'SendGrid provider' --provider-name sendgrid
+
+docs: doc
 
 release:
 	goreleaser release --rm-dist
 
-.PHONY: build test testacc fmt fmtcheck lint golangci-lint sweep test-release release
+.PHONY: build test testacc fmt fmtcheck lint golangci-lint sweep test-release doc docs release
