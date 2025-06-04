@@ -137,17 +137,17 @@ func parseErrorDetails(err error) (string, bool) {
 
 	// Check for scope-related errors
 	if strings.Contains(errStr, "invalid or unassignable scopes") {
-		return `Invalid or unassignable scopes provided. This can happen when:
+		return `invalid or unassignable scopes provided. This can happen when:
 1. Using invalid scope names (check SendGrid API documentation)
 2. Your SendGrid plan doesn't support certain scopes
 3. Including automatically managed scopes like '2fa_exempt' or '2fa_required'
 
-Tip: Run 'terraform plan' first to validate your configuration.`, true
+Tip: Run 'terraform plan' first to validate your configuration`, true
 	}
 
 	// Check for permission errors
 	if strings.Contains(errStr, "permission") || strings.Contains(errStr, "unauthorized") {
-		return `Permission denied. Check that:
+		return `permission denied. Check that:
 1. Your API key has sufficient permissions
 2. You're not trying to access features not available in your SendGrid plan
 3. The API key hasn't been revoked or expired`, true
@@ -155,12 +155,12 @@ Tip: Run 'terraform plan' first to validate your configuration.`, true
 
 	// Check for resource not found
 	if strings.Contains(errStr, "not found") || strings.Contains(errStr, "404") {
-		return "Resource not found. It may have been deleted outside of Terraform or the ID is incorrect.", true
+		return "resource not found. It may have been deleted outside of Terraform or the ID is incorrect", true
 	}
 
 	// Check for validation errors
 	if strings.Contains(errStr, "validation") || strings.Contains(errStr, "invalid") {
-		return "Validation error. Please check that all required fields are provided and values are in the correct format.", true
+		return "validation error. Please check that all required fields are provided and values are in the correct format", true
 	}
 
 	return "", false
@@ -180,17 +180,17 @@ func enhanceError(originalErr error, statusCode int) error {
 	// Provide context based on status code
 	switch statusCode {
 	case http.StatusBadRequest:
-		return fmt.Errorf(`Bad request (HTTP 400). This usually means:
+		return fmt.Errorf(`bad request (HTTP 400). This usually means:
 1. Invalid input data or parameters
 2. Malformed request body
 3. Business logic validation failure
 
 Original error: %w
 
-Tip: Check the SendGrid API documentation for the correct request format.`, originalErr)
+Tip: Check the SendGrid API documentation for the correct request format`, originalErr)
 
 	case http.StatusUnauthorized:
-		return fmt.Errorf(`Unauthorized (HTTP 401). Check that:
+		return fmt.Errorf(`unauthorized (HTTP 401). Check that:
 1. Your SendGrid API key is correct
 2. The API key hasn't been revoked
 3. You have the necessary permissions
@@ -198,7 +198,7 @@ Tip: Check the SendGrid API documentation for the correct request format.`, orig
 Original error: %w`, originalErr)
 
 	case http.StatusForbidden:
-		return fmt.Errorf(`Forbidden (HTTP 403). This means:
+		return fmt.Errorf(`forbidden (HTTP 403). This means:
 1. Your API key lacks the required permissions
 2. Your SendGrid plan doesn't support this feature
 3. Resource access is restricted
@@ -206,17 +206,17 @@ Original error: %w`, originalErr)
 Original error: %w`, originalErr)
 
 	case http.StatusNotFound:
-		return fmt.Errorf(`Resource not found (HTTP 404). This means:
+		return fmt.Errorf(`resource not found (HTTP 404). This means:
 1. The resource was deleted outside of Terraform
 2. The resource ID is incorrect
 3. You don't have permission to view the resource
 
 Original error: %w
 
-Tip: Run 'terraform refresh' to sync the state with actual resources.`, originalErr)
+Tip: Run 'terraform refresh' to sync the state with actual resources`, originalErr)
 
 	case http.StatusTooManyRequests:
-		return fmt.Errorf(`Rate limit exceeded (HTTP 429). The provider will automatically retry, but you can:
+		return fmt.Errorf(`rate limit exceeded (HTTP 429). The provider will automatically retry, but you can:
 1. Reduce parallelism: terraform apply -parallelism=1
 2. Increase timeouts in your resource configuration
 3. Check if you're hitting API limits in multiple processes
@@ -268,7 +268,7 @@ func RetryOnRateLimit(
 		if strings.Contains(err.Error(), "context canceled") ||
 			strings.Contains(err.Error(), "operation was canceled") ||
 			strings.Contains(err.Error(), "context deadline exceeded") {
-			return resp, fmt.Errorf(`Operation was canceled or timed out. This can happen when:
+			return resp, fmt.Errorf(`operation was canceled or timed out. This can happen when:
 1. You pressed Ctrl+C during execution
 2. The operation took longer than the configured timeout
 3. Network connectivity issues occurred

@@ -3,6 +3,7 @@ package sendgrid
 import (
 	"testing"
 
+	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -57,26 +58,27 @@ func TestValidateTeammateScopes(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			scopeSet := schema.NewSet(schema.HashString, tt.scopes)
-			_, errors := validateTeammateScopes(scopeSet, "scopes")
+			path := cty.GetAttrPath("scopes")
+			diags := validateTeammateScopes(scopeSet, path)
 
 			if tt.expectErrors {
-				if len(errors) == 0 {
+				if !diags.HasError() {
 					t.Errorf("Expected errors but got none")
 				} else if tt.errorContains != "" {
 					found := false
-					for _, err := range errors {
-						if containsString(err.Error(), tt.errorContains) {
+					for _, diag := range diags {
+						if containsString(diag.Detail, tt.errorContains) || containsString(diag.Summary, tt.errorContains) {
 							found = true
 							break
 						}
 					}
 					if !found {
-						t.Errorf("Expected error containing '%s', but got: %v", tt.errorContains, errors)
+						t.Errorf("Expected error containing '%s', but got: %v", tt.errorContains, diags)
 					}
 				}
 			} else {
-				if len(errors) > 0 {
-					t.Errorf("Expected no errors but got: %v", errors)
+				if diags.HasError() {
+					t.Errorf("Expected no errors but got: %v", diags)
 				}
 			}
 		})

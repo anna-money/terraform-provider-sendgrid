@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	sendgrid "github.com/anna-money/terraform-provider-sendgrid/sdk"
+	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -355,7 +356,6 @@ func resourceSendgridTeammate() *schema.Resource {
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
-				ValidateFunc: validateTeammateScopes,
 			},
 			"username": {
 				Type:        schema.TypeString,
@@ -370,7 +370,8 @@ func resourceSendgridTeammate() *schema.Resource {
 }
 
 // validateTeammateScopes validates the scopes provided for a teammate
-func validateTeammateScopes(v interface{}, k string) (warnings []string, errors []error) {
+func validateTeammateScopes(v interface{}, path cty.Path) diag.Diagnostics {
+	var diags diag.Diagnostics
 	scopes := v.(*schema.Set).List()
 
 	var invalidScopes []string
@@ -392,20 +393,30 @@ func validateTeammateScopes(v interface{}, k string) (warnings []string, errors 
 	}
 
 	if len(automaticScopes) > 0 {
-		errors = append(errors, fmt.Errorf(
-			"the following scopes are set automatically by SendGrid and cannot be manually assigned: %s",
-			strings.Join(automaticScopes, ", "),
-		))
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Automatic scopes cannot be manually assigned",
+			Detail: fmt.Sprintf(
+				"the following scopes are set automatically by SendGrid and cannot be manually assigned: %s",
+				strings.Join(automaticScopes, ", "),
+			),
+			AttributePath: path,
+		})
 	}
 
 	if len(invalidScopes) > 0 {
-		errors = append(errors, fmt.Errorf(
-			"the following scopes are not valid or assignable: %s. Please check the SendGrid API documentation for valid scopes",
-			strings.Join(invalidScopes, ", "),
-		))
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Invalid or unassignable scopes",
+			Detail: fmt.Sprintf(
+				"the following scopes are not valid or assignable: %s. Please check the SendGrid API documentation for valid scopes",
+				strings.Join(invalidScopes, ", "),
+			),
+			AttributePath: path,
+		})
 	}
 
-	return warnings, errors
+	return diags
 }
 
 // sanitizeScopes removes automatic scopes that SendGrid sets automatically
@@ -453,10 +464,20 @@ func resourceSendgridTeammateCreate(ctx context.Context, d *schema.ResourceData,
 	firstName := d.Get("first_name").(string)
 	lastName := d.Get("last_name").(string)
 
-	scopesSet := d.Get("scopes").(*schema.Set).List()
+	scopesSet := d.Get("scopes").(*schema.Set)
+
+	// Validate scopes if not admin
+	if !isAdmin && scopesSet.Len() > 0 {
+		path := cty.GetAttrPath("scopes")
+		if diags := validateTeammateScopes(scopesSet, path); diags.HasError() {
+			return diags
+		}
+	}
+
 	var scopes []string
 	if !isAdmin {
-		for _, scope := range scopesSet {
+		scopesList := scopesSet.List()
+		for _, scope := range scopesList {
 			scopes = append(scopes, scope.(string))
 		}
 		// Sanitize scopes to remove any automatic ones
@@ -536,10 +557,20 @@ func resourceSendgridTeammateUpdate(ctx context.Context, d *schema.ResourceData,
 	firstName := d.Get("first_name").(string)
 	lastName := d.Get("last_name").(string)
 
-	scopesSet := d.Get("scopes").(*schema.Set).List()
+	scopesSet := d.Get("scopes").(*schema.Set)
+
+	// Validate scopes if not admin
+	if !isAdmin && scopesSet.Len() > 0 {
+		path := cty.GetAttrPath("scopes")
+		if diags := validateTeammateScopes(scopesSet, path); diags.HasError() {
+			return diags
+		}
+	}
+
 	var scopes []string
 	if !isAdmin {
-		for _, scope := range scopesSet {
+		scopesList := scopesSet.List()
+		for _, scope := range scopesList {
 			scopes = append(scopes, scope.(string))
 		}
 		// Sanitize scopes to remove any automatic ones
