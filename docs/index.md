@@ -16,8 +16,8 @@ description: |-
 terraform {
   required_providers {
     sendgrid = {
-      version = "1.0.0"
-      source  = "registry.terraform.io/anna-money/sendgrid"
+      source  = "arslanbekov/sendgrid"
+      version = "~> 2.0"
     }
   }
 }
