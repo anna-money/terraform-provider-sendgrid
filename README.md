@@ -1,5 +1,14 @@
 # Terraform Provider for Sendgrid
 
+> **⚠️ Unofficial Provider Notice**
+> This is an **unofficial** Terraform provider for SendGrid that extends the original functionality with additional features:
+>
+> - **Teammate Management**: Full support for `sendgrid_teammate` resource and data source
+> - **Enhanced Rate Limiting**: Comprehensive rate limiting support for all resources with automatic retry on HTTP 429 errors
+> - **Improved Reliability**: Built-in exponential backoff strategy for better API interaction
+>
+> This provider is maintained independently and is not affiliated with or officially supported by SendGrid/Twilio.
+
 ## Usage
 
 Detailed documentation is available on the [Terraform provider registry](https://registry.terraform.io/providers/anna-money/sendgrid/latest).
@@ -24,6 +33,22 @@ For detailed information, see [Rate Limiting Documentation](docs/rate_limiting.m
 - Use `-parallelism=1` for API key creation to avoid rate limits
 - Configure custom timeouts for operations that may need more retry time
 - Monitor SendGrid API usage in your dashboard
+
+### Teammate Management
+
+Unlike the official provider, this version includes full support for managing SendGrid teammates:
+
+```hcl
+resource "sendgrid_teammate" "example" {
+  email    = "teammate@example.com"
+  is_admin = false
+  scopes   = ["mail.send", "marketing.read"]
+}
+
+data "sendgrid_teammate" "existing" {
+  email = "existing@example.com"
+}
+```
 
 ## Build
 
