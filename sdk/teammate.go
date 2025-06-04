@@ -238,7 +238,7 @@ func (c *Client) DeleteUser(ctx context.Context, email string) (bool, RequestErr
 }
 
 func (c *Client) GetPendingUserToken(ctx context.Context, email string) (string, RequestError) {
-	respBody, statusCode, err := c.Get(ctx, "GET", "/teammates/pending")
+	respBody, statusCode, err := c.Get(ctx, "GET", "/teammates/pending?limit=200")
 	if err != nil {
 		return "", RequestError{
 			StatusCode: statusCode,
@@ -276,7 +276,7 @@ func (c *Client) GetPendingUserToken(ctx context.Context, email string) (string,
 
 // ReadPendingUser reads a pending user invitation by email
 func (c *Client) ReadPendingUser(ctx context.Context, email string) (*User, RequestError) {
-	respBody, statusCode, err := c.Get(ctx, "GET", "/teammates/pending")
+	respBody, statusCode, err := c.Get(ctx, "GET", "/teammates/pending?limit=10000")
 	if err != nil {
 		return nil, RequestError{
 			StatusCode: statusCode,
