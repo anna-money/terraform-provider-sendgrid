@@ -31,11 +31,14 @@ func dataSendgridTemplateVersionRead(ctx context.Context, d *schema.ResourceData
 	templateID := d.Get("template_id").(string)
 	c := m.(*sendgrid.Client)
 
-	template, err := c.ReadTemplate(ctx, templateID)
+	templateStruct, err := sendgrid.RetryOnRateLimit(ctx, d, func() (interface{}, sendgrid.RequestError) {
+		return c.ReadTemplate(ctx, templateID)
+	})
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
+	template := templateStruct.(*sendgrid.Template)
 	var activeVersion *sendgrid.TemplateVersion
 
 	for i := range template.Versions {

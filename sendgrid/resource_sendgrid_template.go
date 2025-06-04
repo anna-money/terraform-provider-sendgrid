@@ -65,11 +65,14 @@ func resourceSendgridTemplateCreate(ctx context.Context, d *schema.ResourceData,
 	name := d.Get("name").(string)
 	generation := d.Get("generation").(string)
 
-	template, err := c.CreateTemplate(ctx, name, generation)
+	templateStruct, err := sendgrid.RetryOnRateLimit(ctx, d, func() (interface{}, sendgrid.RequestError) {
+		return c.CreateTemplate(ctx, name, generation)
+	})
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
+	template := templateStruct.(*sendgrid.Template)
 	//nolint:errcheck
 	d.Set("updated_at", template.UpdatedAt)
 	d.SetId(template.ID)
@@ -80,12 +83,15 @@ func resourceSendgridTemplateCreate(ctx context.Context, d *schema.ResourceData,
 func resourceSendgridTemplateRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	c := m.(*sendgrid.Client)
 
-	template, err := c.ReadTemplate(ctx, d.Id())
+	templateStruct, err := sendgrid.RetryOnRateLimit(ctx, d, func() (interface{}, sendgrid.RequestError) {
+		return c.ReadTemplate(ctx, d.Id())
+	})
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	if err = sendgridTemplateParse(template, d); err != nil {
+	template := templateStruct.(*sendgrid.Template)
+	if err := sendgridTemplateParse(template, d); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -112,7 +118,9 @@ func resourceSendgridTemplateUpdate(ctx context.Context, d *schema.ResourceData,
 	c := m.(*sendgrid.Client)
 
 	if d.HasChange("name") {
-		_, err := c.UpdateTemplate(ctx, d.Id(), d.Get("name").(string))
+		_, err := sendgrid.RetryOnRateLimit(ctx, d, func() (interface{}, sendgrid.RequestError) {
+			return c.UpdateTemplate(ctx, d.Id(), d.Get("name").(string))
+		})
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -124,7 +132,9 @@ func resourceSendgridTemplateUpdate(ctx context.Context, d *schema.ResourceData,
 func resourceSendgridTemplateDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	c := m.(*sendgrid.Client)
 
-	_, err := c.DeleteTemplate(ctx, d.Id())
+	_, err := sendgrid.RetryOnRateLimit(ctx, d, func() (interface{}, sendgrid.RequestError) {
+		return c.DeleteTemplate(ctx, d.Id())
+	})
 	if err != nil {
 		return diag.FromErr(err)
 	}
