@@ -3,6 +3,7 @@ package sendgrid_test
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"testing"
 
 	sendgrid "github.com/anna-money/terraform-provider-sendgrid/sdk"
@@ -11,9 +12,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func TestAccSendgridTeammateBasic(t *testing.T) {
-	email := "terraform-teammate-" + acctest.RandString(10) + "@example.com"
-	scopes := []string{"mail.send", "marketing.read"}
+func TestAccSendgridTeammate_basic(t *testing.T) {
+	email := "terraform-test-" + acctest.RandString(10) + "@example.com"
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -21,20 +21,19 @@ func TestAccSendgridTeammateBasic(t *testing.T) {
 		CheckDestroy: testAccCheckSendgridTeammateDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccCheckSendgridTeammateConfigBasic(email, false, false, scopes),
+				Config: testAccCheckSendgridTeammateConfigBasic(email),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckSendgridTeammateExists("sendgrid_teammate.test"),
 					resource.TestCheckResourceAttr("sendgrid_teammate.test", "email", email),
 					resource.TestCheckResourceAttr("sendgrid_teammate.test", "is_admin", "false"),
 					resource.TestCheckResourceAttr("sendgrid_teammate.test", "is_sso", "false"),
-					resource.TestCheckResourceAttr("sendgrid_teammate.test", "scopes.#", "2"),
 				),
 			},
 		},
 	})
 }
 
-func TestAccSendgridTeammateAdmin(t *testing.T) {
+func TestAccSendgridTeammate_admin(t *testing.T) {
 	email := "terraform-admin-" + acctest.RandString(10) + "@example.com"
 
 	resource.Test(t, resource.TestCase{
@@ -43,22 +42,19 @@ func TestAccSendgridTeammateAdmin(t *testing.T) {
 		CheckDestroy: testAccCheckSendgridTeammateDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccCheckSendgridTeammateConfigAdmin(email, true, false),
+				Config: testAccCheckSendgridTeammateConfigAdmin(email),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckSendgridTeammateExists("sendgrid_teammate.admin"),
-					resource.TestCheckResourceAttr("sendgrid_teammate.admin", "email", email),
-					resource.TestCheckResourceAttr("sendgrid_teammate.admin", "is_admin", "true"),
-					resource.TestCheckResourceAttr("sendgrid_teammate.admin", "is_sso", "false"),
+					testAccCheckSendgridTeammateExists("sendgrid_teammate.test"),
+					resource.TestCheckResourceAttr("sendgrid_teammate.test", "email", email),
+					resource.TestCheckResourceAttr("sendgrid_teammate.test", "is_admin", "true"),
 				),
 			},
 		},
 	})
 }
 
-func TestAccSendgridTeammateUpdate(t *testing.T) {
-	email := "terraform-update-" + acctest.RandString(10) + "@example.com"
-	initialScopes := []string{"mail.send"}
-	updatedScopes := []string{"mail.send", "marketing.read", "marketing.send"}
+func TestAccSendgridTeammate_withValidScopes(t *testing.T) {
+	email := "terraform-scopes-" + acctest.RandString(10) + "@example.com"
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -66,16 +62,11 @@ func TestAccSendgridTeammateUpdate(t *testing.T) {
 		CheckDestroy: testAccCheckSendgridTeammateDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccCheckSendgridTeammateConfigBasic(email, false, false, initialScopes),
+				Config: testAccCheckSendgridTeammateConfigWithScopes(email),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckSendgridTeammateExists("sendgrid_teammate.test"),
-					resource.TestCheckResourceAttr("sendgrid_teammate.test", "scopes.#", "1"),
-				),
-			},
-			{
-				Config: testAccCheckSendgridTeammateConfigBasic(email, false, false, updatedScopes),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckSendgridTeammateExists("sendgrid_teammate.test"),
+					resource.TestCheckResourceAttr("sendgrid_teammate.test", "email", email),
+					resource.TestCheckResourceAttr("sendgrid_teammate.test", "is_admin", "false"),
 					resource.TestCheckResourceAttr("sendgrid_teammate.test", "scopes.#", "3"),
 				),
 			},
@@ -83,21 +74,31 @@ func TestAccSendgridTeammateUpdate(t *testing.T) {
 	})
 }
 
-func TestAccSendgridTeammateWithRateLimiting(t *testing.T) {
-	email := "terraform-rate-limit-" + acctest.RandString(10) + "@example.com"
-	scopes := []string{"mail.send"}
+func TestAccSendgridTeammate_invalidScopes(t *testing.T) {
+	email := "terraform-invalid-" + acctest.RandString(10) + "@example.com"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckSendgridTeammateDestroy,
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccCheckSendgridTeammateConfigWithTimeouts(email, false, false, scopes),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckSendgridTeammateExists("sendgrid_teammate.rate_limit"),
-					resource.TestCheckResourceAttr("sendgrid_teammate.rate_limit", "email", email),
-				),
+				Config:      testAccCheckSendgridTeammateConfigInvalidScopes(email),
+				ExpectError: regexp.MustCompile("the following scopes are not valid or assignable"),
+			},
+		},
+	})
+}
+
+func TestAccSendgridTeammate_automaticScopes(t *testing.T) {
+	email := "terraform-auto-" + acctest.RandString(10) + "@example.com"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccCheckSendgridTeammateConfigAutomaticScopes(email),
+				ExpectError: regexp.MustCompile("set automatically by SendGrid and cannot be manually assigned"),
 			},
 		},
 	})
@@ -123,54 +124,6 @@ func testAccCheckSendgridTeammateDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccCheckSendgridTeammateConfigBasic(email string, isAdmin, isSso bool, scopes []string) string {
-	scopesStr := ""
-	if len(scopes) > 0 {
-		scopesStr = fmt.Sprintf(`scopes = %q`, scopes)
-	}
-
-	return fmt.Sprintf(`
-resource "sendgrid_teammate" "test" {
-	email    = "%s"
-	is_admin = %t
-	is_sso   = %t
-	%s
-}
-`, email, isAdmin, isSso, scopesStr)
-}
-
-func testAccCheckSendgridTeammateConfigAdmin(email string, isAdmin, isSso bool) string {
-	return fmt.Sprintf(`
-resource "sendgrid_teammate" "admin" {
-	email    = "%s"
-	is_admin = %t
-	is_sso   = %t
-}
-`, email, isAdmin, isSso)
-}
-
-func testAccCheckSendgridTeammateConfigWithTimeouts(email string, isAdmin, isSso bool, scopes []string) string {
-	scopesStr := ""
-	if len(scopes) > 0 {
-		scopesStr = fmt.Sprintf(`scopes = %q`, scopes)
-	}
-
-	return fmt.Sprintf(`
-resource "sendgrid_teammate" "rate_limit" {
-	email    = "%s"
-	is_admin = %t
-	is_sso   = %t
-	%s
-
-	timeouts {
-		create = "30m"
-		update = "30m"
-		delete = "30m"
-	}
-}
-`, email, isAdmin, isSso, scopesStr)
-}
-
 func testAccCheckSendgridTeammateExists(n string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
@@ -193,4 +146,69 @@ func testAccCheckSendgridTeammateExists(n string) resource.TestCheckFunc {
 
 		return nil
 	}
+}
+
+func testAccCheckSendgridTeammateConfigBasic(email string) string {
+	return fmt.Sprintf(`
+resource "sendgrid_teammate" "test" {
+	email    = "%s"
+	is_admin = false
+	is_sso   = false
+	scopes   = ["mail.send"]
+}
+`, email)
+}
+
+func testAccCheckSendgridTeammateConfigAdmin(email string) string {
+	return fmt.Sprintf(`
+resource "sendgrid_teammate" "test" {
+	email    = "%s"
+	is_admin = true
+	is_sso   = false
+}
+`, email)
+}
+
+func testAccCheckSendgridTeammateConfigWithScopes(email string) string {
+	return fmt.Sprintf(`
+resource "sendgrid_teammate" "test" {
+	email    = "%s"
+	is_admin = false
+	is_sso   = false
+	scopes   = [
+		"mail.send",
+		"templates.read",
+		"stats.read"
+	]
+}
+`, email)
+}
+
+func testAccCheckSendgridTeammateConfigInvalidScopes(email string) string {
+	return fmt.Sprintf(`
+resource "sendgrid_teammate" "test" {
+	email    = "%s"
+	is_admin = false
+	is_sso   = false
+	scopes   = [
+		"mail.send",
+		"invalid.scope",
+		"another.invalid"
+	]
+}
+`, email)
+}
+
+func testAccCheckSendgridTeammateConfigAutomaticScopes(email string) string {
+	return fmt.Sprintf(`
+resource "sendgrid_teammate" "test" {
+	email    = "%s"
+	is_admin = false
+	is_sso   = false
+	scopes   = [
+		"mail.send",
+		"2fa_exempt"
+	]
+}
+`, email)
 }

@@ -1,0 +1,40 @@
+---
+page_title: "{{.Name}} {{.Type}} - {{.ProviderName}}"
+subcategory: ""
+description: |-
+{{ .Description | plainmarkdown | trimspace | prefixlines "  " }}
+---
+
+# {{.Name}} ({{.Type}})
+
+{{ .Description | trimspace }}
+
+## Example Usage
+
+### Basic Teammate
+
+{{ tffile "examples/resources/sendgrid_teammate/resource.tf" }}
+
+### Admin Teammate
+
+{{ tffile "examples/resources/sendgrid_teammate/admin.tf" }}
+
+### SSO User
+
+{{ tffile "examples/resources/sendgrid_teammate/sso_user.tf" }}
+
+### Marketing Team Member
+
+{{ tffile "examples/resources/sendgrid_teammate/marketing_user.tf" }}
+
+### Bulk Creation
+
+{{ tffile "examples/resources/sendgrid_teammate/bulk_creation.tf" }}
+
+{{ .SchemaMarkdown | trimspace }}
+
+## Import
+
+Import is supported using the following syntax:
+
+{{ codefile "shell" "examples/resources/sendgrid_teammate/import.sh" }}

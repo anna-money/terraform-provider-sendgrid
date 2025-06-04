@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -130,7 +131,113 @@ type subUserErrors struct {
 	Errors []subUserError `json:"errors,omitempty"`
 }
 
+// parseErrorDetails attempts to parse SendGrid API error response for better error messages
+func parseErrorDetails(err error) (string, bool) {
+	errStr := err.Error()
+
+	// Check for scope-related errors
+	if strings.Contains(errStr, "invalid or unassignable scopes") {
+		return `Invalid or unassignable scopes provided. This can happen when:
+1. Using invalid scope names (check SendGrid API documentation)
+2. Your SendGrid plan doesn't support certain scopes
+3. Including automatically managed scopes like '2fa_exempt' or '2fa_required'
+
+Tip: Run 'terraform plan' first to validate your configuration.`, true
+	}
+
+	// Check for permission errors
+	if strings.Contains(errStr, "permission") || strings.Contains(errStr, "unauthorized") {
+		return `Permission denied. Check that:
+1. Your API key has sufficient permissions
+2. You're not trying to access features not available in your SendGrid plan
+3. The API key hasn't been revoked or expired`, true
+	}
+
+	// Check for resource not found
+	if strings.Contains(errStr, "not found") || strings.Contains(errStr, "404") {
+		return "Resource not found. It may have been deleted outside of Terraform or the ID is incorrect.", true
+	}
+
+	// Check for validation errors
+	if strings.Contains(errStr, "validation") || strings.Contains(errStr, "invalid") {
+		return "Validation error. Please check that all required fields are provided and values are in the correct format.", true
+	}
+
+	return "", false
+}
+
+// enhanceError provides more helpful error messages based on the error type and context
+func enhanceError(originalErr error, statusCode int) error {
+	if originalErr == nil {
+		return nil
+	}
+
+	// Try to parse for specific error details
+	if enhancedMsg, enhanced := parseErrorDetails(originalErr); enhanced {
+		return fmt.Errorf("%s\n\nOriginal error: %w", enhancedMsg, originalErr)
+	}
+
+	// Provide context based on status code
+	switch statusCode {
+	case http.StatusBadRequest:
+		return fmt.Errorf(`Bad request (HTTP 400). This usually means:
+1. Invalid input data or parameters
+2. Malformed request body
+3. Business logic validation failure
+
+Original error: %w
+
+Tip: Check the SendGrid API documentation for the correct request format.`, originalErr)
+
+	case http.StatusUnauthorized:
+		return fmt.Errorf(`Unauthorized (HTTP 401). Check that:
+1. Your SendGrid API key is correct
+2. The API key hasn't been revoked
+3. You have the necessary permissions
+
+Original error: %w`, originalErr)
+
+	case http.StatusForbidden:
+		return fmt.Errorf(`Forbidden (HTTP 403). This means:
+1. Your API key lacks the required permissions
+2. Your SendGrid plan doesn't support this feature
+3. Resource access is restricted
+
+Original error: %w`, originalErr)
+
+	case http.StatusNotFound:
+		return fmt.Errorf(`Resource not found (HTTP 404). This means:
+1. The resource was deleted outside of Terraform
+2. The resource ID is incorrect
+3. You don't have permission to view the resource
+
+Original error: %w
+
+Tip: Run 'terraform refresh' to sync the state with actual resources.`, originalErr)
+
+	case http.StatusTooManyRequests:
+		return fmt.Errorf(`Rate limit exceeded (HTTP 429). The provider will automatically retry, but you can:
+1. Reduce parallelism: terraform apply -parallelism=1
+2. Increase timeouts in your resource configuration
+3. Check if you're hitting API limits in multiple processes
+
+Original error: %w`, originalErr)
+
+	case http.StatusInternalServerError, http.StatusBadGateway, http.StatusServiceUnavailable:
+		return fmt.Errorf(`SendGrid API server error (HTTP %d). This is usually temporary:
+1. Check SendGrid status page: https://status.sendgrid.com/
+2. Retry the operation after a few minutes
+3. If persists, contact SendGrid support
+
+Original error: %w`, statusCode, originalErr)
+
+	default:
+		return fmt.Errorf("request failed with HTTP %d: %w", statusCode, originalErr)
+	}
+}
+
 // RetryOnRateLimit management of RequestErrors, and launch a retry if needed.
+// Enhanced with better error handling and more informative error messages.
 func RetryOnRateLimit(
 	ctx context.Context, d *schema.ResourceData, f func() (interface{}, RequestError),
 ) (interface{}, error) {
@@ -141,17 +248,39 @@ func RetryOnRateLimit(
 		d.Timeout(schema.TimeoutCreate), func() *retry.RetryError {
 			var requestErr RequestError
 			resp, requestErr = f()
+
 			if requestErr.Err != nil {
+				// Always retry rate limit errors
 				if requestErr.StatusCode == http.StatusTooManyRequests {
 					return retry.RetryableError(requestErr.Err)
 				}
 
-				return retry.NonRetryableError(requestErr.Err)
+				// Enhance the error message before returning
+				enhancedErr := enhanceError(requestErr.Err, requestErr.StatusCode)
+				return retry.NonRetryableError(enhancedErr)
 			}
 
 			return nil
 		})
+
 	if err != nil {
+		// Check for context cancellation
+		if strings.Contains(err.Error(), "context canceled") ||
+			strings.Contains(err.Error(), "operation was canceled") ||
+			strings.Contains(err.Error(), "context deadline exceeded") {
+			return resp, fmt.Errorf(`Operation was canceled or timed out. This can happen when:
+1. You pressed Ctrl+C during execution
+2. The operation took longer than the configured timeout
+3. Network connectivity issues occurred
+
+What to do next:
+1. Check your SendGrid dashboard for partially created resources
+2. Run 'terraform refresh' to update the state
+3. Re-run the operation with increased timeout if needed
+
+Original error: %w`, err)
+		}
+
 		return resp, fmt.Errorf("request failed: %w", err)
 	}
 

@@ -1,13 +1,13 @@
 /*
-Provide a resource to manage a subuser.
+Provide a resource to manage a sendgrid teammate.
 Example Usage
 ```hcl
 
 	resource "sendgrid_teammate" "user" {
-		email    = arslanbekov@gmail.com
+		email    = "arslanbekov@gmail.com"
 		is_admin = false
 		scopes   = [
-			""
+			"mail.send"
 		]
 	}
 
@@ -17,6 +17,8 @@ package sendgrid
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	sendgrid "github.com/anna-money/terraform-provider-sendgrid/sdk"
 	"github.com/hashicorp/go-multierror"
@@ -25,8 +27,287 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+// validSendgridScopes contains the actual list of valid SendGrid scopes
+// Retrieved from https://api.sendgrid.com/v3/scopes as of 2024
+var validSendgridScopes = map[string]bool{
+	"access_settings.activity.read":             true,
+	"access_settings.whitelist.create":          true,
+	"access_settings.whitelist.delete":          true,
+	"access_settings.whitelist.read":            true,
+	"access_settings.whitelist.update":          true,
+	"alerts.create":                             true,
+	"alerts.delete":                             true,
+	"alerts.read":                               true,
+	"alerts.update":                             true,
+	"api_keys.create":                           true,
+	"api_keys.delete":                           true,
+	"api_keys.read":                             true,
+	"api_keys.update":                           true,
+	"asm.groups.create":                         true,
+	"asm.groups.delete":                         true,
+	"asm.groups.read":                           true,
+	"asm.groups.suppressions.create":            true,
+	"asm.groups.suppressions.delete":            true,
+	"asm.groups.suppressions.read":              true,
+	"asm.groups.suppressions.update":            true,
+	"asm.groups.update":                         true,
+	"asm.suppressions.global.create":            true,
+	"asm.suppressions.global.delete":            true,
+	"asm.suppressions.global.read":              true,
+	"asm.suppressions.global.update":            true,
+	"billing.create":                            true,
+	"billing.delete":                            true,
+	"billing.read":                              true,
+	"billing.update":                            true,
+	"browsers.stats.read":                       true,
+	"categories.create":                         true,
+	"categories.delete":                         true,
+	"categories.read":                           true,
+	"categories.stats.read":                     true,
+	"categories.stats.sums.read":                true,
+	"categories.update":                         true,
+	"clients.desktop.stats.read":                true,
+	"clients.phone.stats.read":                  true,
+	"clients.stats.read":                        true,
+	"clients.tablet.stats.read":                 true,
+	"clients.webmail.stats.read":                true,
+	"credentials.create":                        true,
+	"credentials.delete":                        true,
+	"credentials.read":                          true,
+	"credentials.update":                        true,
+	"design_library.create":                     true,
+	"design_library.delete":                     true,
+	"design_library.read":                       true,
+	"design_library.update":                     true,
+	"devices.stats.read":                        true,
+	"di.bounce_block_classification.read":       true,
+	"email_testing.read":                        true,
+	"email_testing.write":                       true,
+	"geo.stats.read":                            true,
+	"ips.assigned.read":                         true,
+	"ips.create":                                true,
+	"ips.delete":                                true,
+	"ips.pools.create":                          true,
+	"ips.pools.delete":                          true,
+	"ips.pools.ips.create":                      true,
+	"ips.pools.ips.delete":                      true,
+	"ips.pools.ips.read":                        true,
+	"ips.pools.ips.update":                      true,
+	"ips.pools.read":                            true,
+	"ips.pools.update":                          true,
+	"ips.read":                                  true,
+	"ips.update":                                true,
+	"ips.warmup.create":                         true,
+	"ips.warmup.delete":                         true,
+	"ips.warmup.read":                           true,
+	"ips.warmup.update":                         true,
+	"mail.batch.create":                         true,
+	"mail.batch.delete":                         true,
+	"mail.batch.read":                           true,
+	"mail.batch.update":                         true,
+	"mail.send":                                 true,
+	"mail_settings.address_whitelist.create":    true,
+	"mail_settings.address_whitelist.delete":    true,
+	"mail_settings.address_whitelist.read":      true,
+	"mail_settings.address_whitelist.update":    true,
+	"mail_settings.bcc.create":                  true,
+	"mail_settings.bcc.delete":                  true,
+	"mail_settings.bcc.read":                    true,
+	"mail_settings.bcc.update":                  true,
+	"mail_settings.bounce_purge.create":         true,
+	"mail_settings.bounce_purge.delete":         true,
+	"mail_settings.bounce_purge.read":           true,
+	"mail_settings.bounce_purge.update":         true,
+	"mail_settings.footer.create":               true,
+	"mail_settings.footer.delete":               true,
+	"mail_settings.footer.read":                 true,
+	"mail_settings.footer.update":               true,
+	"mail_settings.forward_bounce.create":       true,
+	"mail_settings.forward_bounce.delete":       true,
+	"mail_settings.forward_bounce.read":         true,
+	"mail_settings.forward_bounce.update":       true,
+	"mail_settings.forward_spam.create":         true,
+	"mail_settings.forward_spam.delete":         true,
+	"mail_settings.forward_spam.read":           true,
+	"mail_settings.forward_spam.update":         true,
+	"mail_settings.plain_content.create":        true,
+	"mail_settings.plain_content.delete":        true,
+	"mail_settings.plain_content.read":          true,
+	"mail_settings.plain_content.update":        true,
+	"mail_settings.read":                        true,
+	"mail_settings.spam_check.create":           true,
+	"mail_settings.spam_check.delete":           true,
+	"mail_settings.spam_check.read":             true,
+	"mail_settings.spam_check.update":           true,
+	"mail_settings.template.create":             true,
+	"mail_settings.template.delete":             true,
+	"mail_settings.template.read":               true,
+	"mail_settings.template.update":             true,
+	"mailbox_providers.stats.read":              true,
+	"marketing.automation.read":                 true,
+	"marketing.read":                            true,
+	"messages.read":                             true,
+	"newsletter.create":                         true,
+	"newsletter.delete":                         true,
+	"newsletter.read":                           true,
+	"newsletter.update":                         true,
+	"partner_settings.new_relic.create":         true,
+	"partner_settings.new_relic.delete":         true,
+	"partner_settings.new_relic.read":           true,
+	"partner_settings.new_relic.update":         true,
+	"partner_settings.read":                     true,
+	"partner_settings.sendwithus.create":        true,
+	"partner_settings.sendwithus.delete":        true,
+	"partner_settings.sendwithus.read":          true,
+	"partner_settings.sendwithus.update":        true,
+	"recipients.erasejob.create":                true,
+	"recipients.erasejob.read":                  true,
+	"sender_verification_eligible":              true,
+	"signup.trigger_confirmation":               true,
+	"sso.settings.create":                       true,
+	"sso.settings.delete":                       true,
+	"sso.settings.read":                         true,
+	"sso.settings.update":                       true,
+	"sso.teammates.create":                      true,
+	"sso.teammates.update":                      true,
+	"stats.global.read":                         true,
+	"stats.read":                                true,
+	"subusers.create":                           true,
+	"subusers.credits.create":                   true,
+	"subusers.credits.delete":                   true,
+	"subusers.credits.read":                     true,
+	"subusers.credits.remaining.create":         true,
+	"subusers.credits.remaining.delete":         true,
+	"subusers.credits.remaining.read":           true,
+	"subusers.credits.remaining.update":         true,
+	"subusers.credits.update":                   true,
+	"subusers.delete":                           true,
+	"subusers.monitor.create":                   true,
+	"subusers.monitor.delete":                   true,
+	"subusers.monitor.read":                     true,
+	"subusers.monitor.update":                   true,
+	"subusers.read":                             true,
+	"subusers.reputations.read":                 true,
+	"subusers.stats.monthly.read":               true,
+	"subusers.stats.read":                       true,
+	"subusers.stats.sums.read":                  true,
+	"subusers.summary.read":                     true,
+	"subusers.update":                           true,
+	"suppression.blocks.create":                 true,
+	"suppression.blocks.delete":                 true,
+	"suppression.blocks.read":                   true,
+	"suppression.blocks.update":                 true,
+	"suppression.bounces.create":                true,
+	"suppression.bounces.delete":                true,
+	"suppression.bounces.read":                  true,
+	"suppression.bounces.update":                true,
+	"suppression.create":                        true,
+	"suppression.delete":                        true,
+	"suppression.invalid_emails.create":         true,
+	"suppression.invalid_emails.delete":         true,
+	"suppression.invalid_emails.read":           true,
+	"suppression.invalid_emails.update":         true,
+	"suppression.read":                          true,
+	"suppression.spam_reports.create":           true,
+	"suppression.spam_reports.delete":           true,
+	"suppression.spam_reports.read":             true,
+	"suppression.spam_reports.update":           true,
+	"suppression.unsubscribes.create":           true,
+	"suppression.unsubscribes.delete":           true,
+	"suppression.unsubscribes.read":             true,
+	"suppression.unsubscribes.update":           true,
+	"suppression.update":                        true,
+	"teammates.create":                          true,
+	"teammates.delete":                          true,
+	"teammates.read":                            true,
+	"teammates.update":                          true,
+	"templates.create":                          true,
+	"templates.delete":                          true,
+	"templates.read":                            true,
+	"templates.update":                          true,
+	"templates.versions.activate.create":        true,
+	"templates.versions.activate.delete":        true,
+	"templates.versions.activate.read":          true,
+	"templates.versions.activate.update":        true,
+	"templates.versions.create":                 true,
+	"templates.versions.delete":                 true,
+	"templates.versions.read":                   true,
+	"templates.versions.update":                 true,
+	"tracking_settings.click.create":            true,
+	"tracking_settings.click.delete":            true,
+	"tracking_settings.click.read":              true,
+	"tracking_settings.click.update":            true,
+	"tracking_settings.google_analytics.create": true,
+	"tracking_settings.google_analytics.delete": true,
+	"tracking_settings.google_analytics.read":   true,
+	"tracking_settings.google_analytics.update": true,
+	"tracking_settings.open.create":             true,
+	"tracking_settings.open.delete":             true,
+	"tracking_settings.open.read":               true,
+	"tracking_settings.open.update":             true,
+	"tracking_settings.read":                    true,
+	"tracking_settings.subscription.create":     true,
+	"tracking_settings.subscription.delete":     true,
+	"tracking_settings.subscription.read":       true,
+	"tracking_settings.subscription.update":     true,
+	"ui.confirm_email":                          true,
+	"ui.provision":                              true,
+	"ui.signup_complete":                        true,
+	"user.account.read":                         true,
+	"user.credits.read":                         true,
+	"user.email.read":                           true,
+	"user.profile.create":                       true,
+	"user.profile.delete":                       true,
+	"user.profile.read":                         true,
+	"user.profile.update":                       true,
+	"user.scheduled_sends.create":               true,
+	"user.scheduled_sends.delete":               true,
+	"user.scheduled_sends.read":                 true,
+	"user.scheduled_sends.update":               true,
+	"user.settings.enforced_tls.read":           true,
+	"user.settings.enforced_tls.update":         true,
+	"user.timezone.create":                      true,
+	"user.timezone.delete":                      true,
+	"user.timezone.read":                        true,
+	"user.timezone.update":                      true,
+	"user.username.read":                        true,
+	"user.webhooks.event.settings.create":       true,
+	"user.webhooks.event.settings.delete":       true,
+	"user.webhooks.event.settings.read":         true,
+	"user.webhooks.event.settings.update":       true,
+	"user.webhooks.event.test.create":           true,
+	"user.webhooks.event.test.delete":           true,
+	"user.webhooks.event.test.read":             true,
+	"user.webhooks.event.test.update":           true,
+	"user.webhooks.parse.settings.create":       true,
+	"user.webhooks.parse.settings.delete":       true,
+	"user.webhooks.parse.settings.read":         true,
+	"user.webhooks.parse.settings.update":       true,
+	"user.webhooks.parse.stats.read":            true,
+	"validations.email.create":                  true,
+	"validations.email.read":                    true,
+	"whitelabel.create":                         true,
+	"whitelabel.delete":                         true,
+	"whitelabel.read":                           true,
+	"whitelabel.update":                         true,
+}
+
+// sendgridAutomaticScopes are scopes that SendGrid sets automatically and should not be included in user input
+var sendgridAutomaticScopes = map[string]bool{
+	"2fa_exempt":   true,
+	"2fa_required": true,
+}
+
 func resourceSendgridTeammate() *schema.Resource {
 	return &schema.Resource{
+		Description: `Manages a SendGrid teammate. Teammates are team members who have access to your SendGrid account with specific permissions.
+
+**Important Notes:**
+- Admin teammates have full access and don't need scopes
+- Scopes '2fa_exempt' and '2fa_required' are set automatically by SendGrid
+- Some scopes require specific SendGrid plans (Pro+, Marketing plans, etc.)
+- Use timeouts for better reliability with rate limiting`,
+
 		CreateContext: resourceSendgridTeammateCreate,
 		ReadContext:   resourceSendgridTeammateRead,
 		UpdateContext: resourceSendgridTeammateUpdate,
@@ -38,22 +319,22 @@ func resourceSendgridTeammate() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			"email": {
 				Type:        schema.TypeString,
-				Description: "The email of the user.",
+				Description: "The email address of the teammate. This will be used as the teammate's login.",
 				Required:    true,
 			},
 			"first_name": {
 				Type:        schema.TypeString,
-				Description: "The first nameof the user.",
+				Description: "The first name of the teammate. Required for SSO users.",
 				Optional:    true,
 			},
 			"last_name": {
 				Type:        schema.TypeString,
-				Description: "The last name of the user.",
+				Description: "The last name of the teammate. Required for SSO users.",
 				Optional:    true,
 			},
 			"is_admin": {
 				Type:        schema.TypeBool,
-				Description: "Invited user should be admin?",
+				Description: "Whether the teammate should have admin privileges. Admin teammates have full access to the account and don't need specific scopes.",
 				Required:    true,
 				Elem: &schema.Schema{
 					Type: schema.TypeBool,
@@ -61,7 +342,7 @@ func resourceSendgridTeammate() *schema.Resource {
 			},
 			"is_sso": {
 				Type:        schema.TypeBool,
-				Description: "Single Sign-On user?",
+				Description: "Whether this is a Single Sign-On (SSO) user. SSO users require first_name and last_name.",
 				Required:    true,
 				Elem: &schema.Schema{
 					Type: schema.TypeBool,
@@ -69,22 +350,99 @@ func resourceSendgridTeammate() *schema.Resource {
 			},
 			"scopes": {
 				Type:        schema.TypeSet,
-				Description: "Permission scopes, will ignored if parameter is_admin = true.",
+				Description: "List of permission scopes for the teammate. Ignored if is_admin is true. Cannot include '2fa_exempt' or '2fa_required' as these are managed automatically by SendGrid. See SendGrid API documentation for available scopes.",
 				Optional:    true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
+				ValidateFunc: validateTeammateScopes,
 			},
 			"username": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				Description: "Username.",
+				Description: "The username for the teammate. If not provided, the email will be used.",
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
 			},
 		},
 	}
+}
+
+// validateTeammateScopes validates the scopes provided for a teammate
+func validateTeammateScopes(v interface{}, k string) (warnings []string, errors []error) {
+	scopes := v.(*schema.Set).List()
+
+	var invalidScopes []string
+	var automaticScopes []string
+
+	for _, scope := range scopes {
+		scopeStr := scope.(string)
+
+		// Check for automatic scopes that shouldn't be set manually
+		if sendgridAutomaticScopes[scopeStr] {
+			automaticScopes = append(automaticScopes, scopeStr)
+			continue
+		}
+
+		// Check for invalid scopes
+		if !validSendgridScopes[scopeStr] {
+			invalidScopes = append(invalidScopes, scopeStr)
+		}
+	}
+
+	if len(automaticScopes) > 0 {
+		errors = append(errors, fmt.Errorf(
+			"the following scopes are set automatically by SendGrid and cannot be manually assigned: %s",
+			strings.Join(automaticScopes, ", "),
+		))
+	}
+
+	if len(invalidScopes) > 0 {
+		errors = append(errors, fmt.Errorf(
+			"the following scopes are not valid or assignable: %s. Please check the SendGrid API documentation for valid scopes",
+			strings.Join(invalidScopes, ", "),
+		))
+	}
+
+	return warnings, errors
+}
+
+// sanitizeScopes removes automatic scopes that SendGrid sets automatically
+func sanitizeScopes(scopes []string) []string {
+	var sanitized []string
+	for _, scope := range scopes {
+		if !sendgridAutomaticScopes[scope] {
+			sanitized = append(sanitized, scope)
+		}
+	}
+	return sanitized
+}
+
+// enhancedRetryOnScopeErrors wraps the standard retry function with enhanced error handling for scope-related errors
+func enhancedRetryOnScopeErrors(ctx context.Context, d *schema.ResourceData, f func() (interface{}, sendgrid.RequestError)) (interface{}, error) {
+	resp, err := sendgrid.RetryOnRateLimit(ctx, d, f)
+	if err != nil {
+		// Check if this is a scope-related error
+		if strings.Contains(err.Error(), "invalid or unassignable scopes") {
+			return nil, fmt.Errorf(`request failed due to invalid scopes. This can happen when:
+1. You provided an invalid scope name (check SendGrid API documentation for valid scopes)
+2. Your SendGrid plan doesn't support certain scopes
+3. You included automatically managed scopes like '2fa_exempt' or '2fa_required'
+
+Original error: %w
+
+Tip: Use 'terraform plan' to validate your configuration before applying`, err)
+		}
+
+		// Check for user cancellation scenarios
+		if strings.Contains(err.Error(), "context canceled") || strings.Contains(err.Error(), "operation was canceled") {
+			return nil, fmt.Errorf(`operation was canceled. If you canceled the operation during execution, some resources may be in an intermediate state. Please check your SendGrid dashboard and run 'terraform refresh' to update the state.
+
+Original error: %w`, err)
+		}
+	}
+	return resp, err
 }
 
 func resourceSendgridTeammateCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -101,13 +459,16 @@ func resourceSendgridTeammateCreate(ctx context.Context, d *schema.ResourceData,
 		for _, scope := range scopesSet {
 			scopes = append(scopes, scope.(string))
 		}
+		// Sanitize scopes to remove any automatic ones
+		scopes = sanitizeScopes(scopes)
 	}
+
 	tflog.Debug(ctx, "Creating teammate", map[string]interface{}{
 		"first_name": firstName, "last_name": lastName,
 		"email": email, "is_admin": isAdmin, "scopes": scopes,
 	})
 
-	userStruct, err := sendgrid.RetryOnRateLimit(ctx, d, func() (interface{}, sendgrid.RequestError) {
+	userStruct, err := enhancedRetryOnScopeErrors(ctx, d, func() (interface{}, sendgrid.RequestError) {
 		if isSSO {
 			return client.CreateSSOUser(ctx, firstName, lastName, email, scopes, isAdmin)
 		} else {
@@ -150,7 +511,7 @@ func resourceSendgridTeammateRead(ctx context.Context, d *schema.ResourceData, m
 	var filteredScopes []string
 	for _, s := range teammate.Scopes {
 		// Sendgrid sets these scopes automatically. If you try to set them, you will get a 400 error.
-		if s != "2fa_exempt" && s != "2fa_required" {
+		if !sendgridAutomaticScopes[s] {
 			filteredScopes = append(filteredScopes, s)
 		}
 	}
@@ -181,9 +542,11 @@ func resourceSendgridTeammateUpdate(ctx context.Context, d *schema.ResourceData,
 		for _, scope := range scopesSet {
 			scopes = append(scopes, scope.(string))
 		}
+		// Sanitize scopes to remove any automatic ones
+		scopes = sanitizeScopes(scopes)
 	}
 
-	_, err := sendgrid.RetryOnRateLimit(ctx, d, func() (interface{}, sendgrid.RequestError) {
+	_, err := enhancedRetryOnScopeErrors(ctx, d, func() (interface{}, sendgrid.RequestError) {
 		if isSSO {
 			return client.UpdateSSOUser(ctx, firstName, lastName, email, scopes, isAdmin)
 		} else {
@@ -208,6 +571,10 @@ func resourceSendgridTeammateDelete(ctx context.Context, d *schema.ResourceData,
 		return client.DeleteUser(ctx, userEmail)
 	})
 	if err != nil {
+		// Enhanced error handling for delete operations
+		if strings.Contains(err.Error(), "context canceled") || strings.Contains(err.Error(), "operation was canceled") {
+			return append(diags, diag.Errorf("Delete operation was canceled. The teammate may still exist in SendGrid. Please check your SendGrid dashboard and re-run the delete operation if needed.")...)
+		}
 		return append(diags, diag.FromErr(err)...)
 	}
 	return diags
