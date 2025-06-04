@@ -30,10 +30,19 @@ jobs:
       - name: Build
         run: go build -v .
 
-      - name: Run Unit Tests
+      - name: Run Unit Tests with Coverage
         run: |
-          # Run only non-acceptance tests (TestProvider and TestProvider_impl)
-          go test -v ./sendgrid/ -run '^TestProvider' -timeout=30s
+          # Run only non-acceptance tests (TestProvider and TestProvider_impl) with coverage
+          go test -v ./sendgrid/ -run '^TestProvider' -timeout=30s -coverprofile=coverage.txt -covermode=atomic
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: arslanbekov/terraform-provider-sendgrid
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: true
 
       - name: Compile Acceptance Tests
         run: |
@@ -60,7 +69,7 @@ jobs:
         run: |
           go get -v -t ./...
 
-      - name: Run Acceptance Tests
+      - name: Run Acceptance Tests with Coverage
         env:
           TF_ACC: "1"
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
@@ -69,4 +78,14 @@ jobs:
             echo "SENDGRID_API_KEY not set, skipping acceptance tests"
             exit 0
           fi
-          go test -v ./sendgrid/ -run '^TestAcc' -timeout=30m -parallel=1
+          go test -v ./sendgrid/ -run '^TestAcc' -timeout=30m -parallel=1 -coverprofile=coverage-acceptance.txt -covermode=atomic
+
+      - name: Upload acceptance test coverage to Codecov
+        if: env.SENDGRID_API_KEY != ''
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: arslanbekov/terraform-provider-sendgrid
+          flags: acceptancetests
+          name: codecov-acceptance
+          fail_ci_if_error: false

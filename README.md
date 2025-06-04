@@ -2,7 +2,7 @@
 
 [![Build Status](https://github.com/arslanbekov/terraform-provider-sendgrid/workflows/Tests/badge.svg)](https://github.com/arslanbekov/terraform-provider-sendgrid/actions)
 [![Go Report Card](https://goreportcard.com/badge/github.com/arslanbekov/terraform-provider-sendgrid)](https://goreportcard.com/report/github.com/arslanbekov/terraform-provider-sendgrid)
-[![codecov](https://codecov.io/gh/arslanbekov/terraform-provider-sendgrid/branch/main/graph/badge.svg)](https://codecov.io/gh/arslanbekov/terraform-provider-sendgrid)
+[![codecov](https://codecov.io/gh/arslanbekov/terraform-provider-sendgrid/branch/master/graph/badge.svg)](https://codecov.io/gh/arslanbekov/terraform-provider-sendgrid)
 
 A comprehensive Terraform provider for managing SendGrid resources with **enterprise-grade features** and **near 100% test coverage**.
 

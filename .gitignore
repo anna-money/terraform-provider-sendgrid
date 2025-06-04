@@ -26,3 +26,9 @@ terraform.rc
 terraform
 scripts/gendocs
 terraform-provider-sendgrid-*
+
+# Coverage files
+coverage.txt
+coverage-acceptance.txt
+coverage.html
+coverage.out
