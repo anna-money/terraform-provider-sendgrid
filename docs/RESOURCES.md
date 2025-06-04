@@ -14,6 +14,7 @@ Manages SendGrid teammates with comprehensive support for both regular and SSO u
 - Automatic handling of pending invitations
 - Comprehensive scope management
 - Built-in retry logic for rate limiting
+- **Important**: Name fields (`first_name`, `last_name`) are editable only for SSO users; for non-SSO users they are read-only and populated from SendGrid profile
 
 **Example:**
 
@@ -31,12 +32,12 @@ resource "sendgrid_teammate" "developer" {
 **Arguments:**
 
 - `email` (Required) - Email address of the teammate
-- `first_name` (Optional) - First name (required for SSO users)
-- `last_name` (Optional) - Last name (required for SSO users)
+- `first_name` (Optional) - First name (required for SSO users, read-only for non-SSO users)
+- `last_name` (Optional) - Last name (required for SSO users, read-only for non-SSO users)
 - `is_admin` (Required) - Whether the teammate has admin privileges
 - `is_sso` (Required) - Whether this is an SSO user
 - `scopes` (Optional) - List of permission scopes (ignored if is_admin is true)
-- `username` (Optional) - Username for the teammate
+- `username` (Optional) - Username for the teammate (read-only for pending users)
 
 **Attributes:**
 

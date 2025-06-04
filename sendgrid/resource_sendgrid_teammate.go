@@ -451,10 +451,11 @@ func suppressDiffForPendingUsers(k, old, new string, d *schema.ResourceData) boo
 		return old == "" && new != ""
 	}
 
-	// For non-SSO users, first_name and last_name are not supported by SendGrid API
-	// Suppress ALL diffs for these fields if user is not SSO (regardless of old/new values)
+	// For non-SSO users, first_name and last_name cannot be updated via API
+	// Suppress diff when trying to change these fields from what API returned
 	if !isSSO && (k == "first_name" || k == "last_name") {
-		return true // Always suppress diff for non-SSO users
+		// Allow setting to what API returned (old value), but prevent changes
+		return old != new
 	}
 
 	return false
@@ -578,25 +579,17 @@ func resourceSendgridTeammateRead(ctx context.Context, d *schema.ResourceData, m
 
 	d.SetId(teammate.Email)
 
-	// For pending users, only set fields that are available from the API
-	// Pending users don't have username, first_name, last_name until they accept invitation
+	// Always set all fields that API returns, regardless of user type
+	// DiffSuppressFunc will handle preventing unwanted changes
 	retErr := multierror.Append(
 		d.Set("email", teammate.Email),
+		d.Set("username", teammate.Username),
+		d.Set("first_name", teammate.FirstName),
+		d.Set("last_name", teammate.LastName),
 		d.Set("scopes", filteredScopes),
 		d.Set("is_admin", teammate.IsAdmin),
 		d.Set("user_status", userStatus),
 	)
-
-	// Only set these fields for active users or if they have values
-	if userStatus == "active" || teammate.Username != "" {
-		retErr = multierror.Append(retErr, d.Set("username", teammate.Username))
-	}
-	if userStatus == "active" || teammate.FirstName != "" {
-		retErr = multierror.Append(retErr, d.Set("first_name", teammate.FirstName))
-	}
-	if userStatus == "active" || teammate.LastName != "" {
-		retErr = multierror.Append(retErr, d.Set("last_name", teammate.LastName))
-	}
 
 	return diag.FromErr(retErr.ErrorOrNil())
 }
