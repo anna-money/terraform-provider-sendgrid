@@ -452,9 +452,9 @@ func suppressDiffForPendingUsers(k, old, new string, d *schema.ResourceData) boo
 	}
 
 	// For non-SSO users, first_name and last_name are not supported by SendGrid API
-	// Suppress diff for these fields if user is not SSO
+	// Suppress ALL diffs for these fields if user is not SSO (regardless of old/new values)
 	if !isSSO && (k == "first_name" || k == "last_name") {
-		return old == "" && new != ""
+		return true // Always suppress diff for non-SSO users
 	}
 
 	return false
