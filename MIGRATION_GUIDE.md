@@ -19,7 +19,7 @@ terraform {
   required_providers {
     sendgrid = {
       source  = "anna-money/sendgrid"
-      version = "~> 1.1"
+      version = "~> 2.0"
     }
   }
 }
@@ -29,7 +29,7 @@ terraform {
   required_providers {
     sendgrid = {
       source  = "arslanbekov/sendgrid"
-      version = "~> 1.2"  # Use latest version
+      version = "~> 2.0"  # Use latest version
     }
   }
 }
@@ -61,8 +61,8 @@ terraform plan
 
 ## Version Compatibility
 
-- **anna-money/sendgrid v1.0.x - v1.1.x**: All functionality preserved
-- **arslanbekov/sendgrid v1.2.x+**: Same features with new namespace
+- **anna-money/sendgrid v1.0.x - v2.0.x**: All functionality preserved
+- **arslanbekov/sendgrid v2.0.x+**: Same features with new namespace
 
 ## Benefits of Migration
 
@@ -82,7 +82,7 @@ If you encounter any issues during migration:
 
 The `anna-money/sendgrid` provider will remain available in Terraform Registry for existing users, but new features and bug fixes will only be available in `arslanbekov/sendgrid`.
 
-## Version 1.1.0 - Pending User Support
+## Version 2.1.0 - Pending User Support
 
 ### New Features
 
@@ -135,7 +135,7 @@ The provider now:
 
 This resolves the common issue where Terraform would fail on the second run with:
 
-```
+```shell
 Error: request failed: resource not found. It may have been deleted outside of Terraform or the ID is incorrect
 Original error: username with email user@example.com not found
 ```
