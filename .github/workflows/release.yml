@@ -1,8 +1,10 @@
 name: release
+
 permissions:
-  contents: read
-  packages: read
+  contents: write
+  packages: write
   statuses: write
+
 on:
   push:
     tags:
